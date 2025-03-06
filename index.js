@@ -44,3 +44,13 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+// New Delivery URL for Go High-Level CP
+app.post('/cp/delivery', async (req, res) => {
+    const eventData = req.body;
+
+    console.log('Received event from CP:', eventData);
+
+    // Process and forward the message as needed
+    res.status(200).json({ status: 'success', message: 'Message received by middleware' });
+});
