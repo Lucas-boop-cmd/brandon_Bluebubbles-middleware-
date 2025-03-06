@@ -16,16 +16,24 @@ const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL;
 // Endpoint to receive BlueBubbles events
 app.post('/bluebubbles/events', async (req, res) => {
     const eventData = req.body;
+
+    // Check if the message is a reaction (associatedMessageType exists)
+    if (eventData.associatedMessageType) {
+        console.log("Ignoring reaction message:", eventData.associatedMessageType);
+        return res.status(200).json({ status: 'ignored', message: 'Reaction ignored' });
+    }
+
     console.log('Event from BlueBubbles:', eventData);
 
     try {
         await axios.post(GHL_WEBHOOK_URL, eventData);
-        res.status(200).json({ status: 'success', message: 'Forwarded to GHL' });
+        res.status(200).json({ status: 'success', message: 'Forwarded to CP' });
     } catch (error) {
         console.error('Error forwarding event:', error.message);
         res.status(500).json({ status: 'error', message: error.message });
     }
 });
+
 
 // Basic health-check route
 app.get('/', (req, res) => {
