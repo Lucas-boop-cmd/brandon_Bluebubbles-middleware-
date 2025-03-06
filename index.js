@@ -54,3 +54,21 @@ app.post('/cp/delivery', async (req, res) => {
     // Process and forward the message as needed
     res.status(200).json({ status: 'success', message: 'Message received by middleware' });
 });
+// Webhook Endpoint for Go High-Level (GHL)
+app.post('/ghl/webhook', async (req, res) => {
+    const eventData = req.body;
+
+    console.log('Received event from GHL:', eventData);
+
+    // Check if it's an inbound or outbound message
+    if (eventData.type === "InboundMessage") {
+        console.log("Inbound message from customer:", eventData);
+        // Process message if needed
+    } else if (eventData.type === "OutboundMessage") {
+        console.log("Outbound message from CP:", eventData);
+        // Process message if needed
+    }
+
+    res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
+});
+
