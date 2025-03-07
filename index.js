@@ -14,6 +14,7 @@ app.use(bodyParser.json());
 const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL;
 const GHL_TOKEN_URL = "https://services.leadconnectorhq.com/oauth/token";
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
+const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
 
 // Store access token and expiration time
 let ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN || null;
@@ -56,18 +57,74 @@ async function getAccessToken() {
     return ACCESS_TOKEN;
 }
 
+// Function to fetch Chat GUID from BlueBubbles
+async function getChatGUID(phoneNumber) {
+    try {
+        const response = await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`, {
+            "with": ["lastMessage", "participants"],
+            "limit": 1,
+            "offset": 0,
+            "where": [
+                {
+                    "statement": "chat.participants.address = :address",
+                    "args": { "address": phoneNumber }
+                }
+            ]
+        }, {
+            headers: { "Content-Type": "application/json" }
+        });
+
+        if (response.data.data.length > 0) {
+            return response.data.data[0].guid;
+        }
+        return null;
+    } catch (error) {
+        console.error("❌ Error fetching Chat GUID from BlueBubbles:", error.message);
+        return null;
+    }
+}
+
+// Function to create a new chat if no existing chat is found
+async function createNewChat(phoneNumber) {
+    try {
+        const response = await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/chat/new?password=${BLUEBUBBLES_PASSWORD}`, {
+            "addresses": [phoneNumber],
+            "service": "iMessage"
+        }, {
+            headers: { "Content-Type": "application/json" }
+        });
+
+        return response.data.data.guid;
+    } catch (error) {
+        console.error("❌ Error creating new chat in BlueBubbles:", error.message);
+        return null;
+    }
+}
+
 // Forward messages to BlueBubbles
 async function forwardToBlueBubbles(eventData) {
     try {
+        let chatGUID = await getChatGUID(eventData.to);
+
+        if (!chatGUID) {
+            console.log(`🔍 No existing chat found for ${eventData.to}, creating new chat...`);
+            chatGUID = await createNewChat(eventData.to);
+        }
+
+        if (!chatGUID) {
+            console.error(`❌ Unable to find or create a chat for ${eventData.to}`);
+            return;
+        }
+
         const messagePayload = {
-            recipient: eventData.to, // Ensure this matches BlueBubbles recipient format
-            message: eventData.body, // Ensure this matches BlueBubbles message format
-            service: "iMessage" // Ensure it's sent as iMessage
+            chatGuid: chatGUID,
+            message: eventData.body,
+            method: "private-api"
         };
 
         console.log("📨 Forwarding message to BlueBubbles:", messagePayload);
 
-        const response = await axios.post(BLUEBUBBLES_API_URL, messagePayload, {
+        const response = await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`, messagePayload, {
             headers: { "Content-Type": "application/json" }
         });
 
@@ -76,65 +133,6 @@ async function forwardToBlueBubbles(eventData) {
         console.error("❌ Error forwarding message to BlueBubbles:", error.message);
     }
 }
-
-// Endpoint to receive BlueBubbles events
-app.post('/bluebubbles/events', async (req, res) => {
-    const eventData = req.body;
-
-    if (eventData.associatedMessageType) {
-        console.log("Ignoring reaction message:", eventData.associatedMessageType);
-        return res.status(200).json({ status: 'ignored', message: 'Reaction ignored' });
-    }
-
-    console.log('Event from BlueBubbles:', eventData);
-
-    try {
-        const token = await getAccessToken();
-        await axios.post(GHL_WEBHOOK_URL, eventData, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        res.status(200).json({ status: 'success', message: 'Forwarded to CP' });
-    } catch (error) {
-        console.error('Error forwarding event:', error.message);
-        res.status(500).json({ status: 'error', message: error.message });
-    }
-});
-
-// Health-check route
-app.get('/', (req, res) => {
-    res.send('Middleware server running!');
-});
-
-// New Delivery URL for GoHighLevel CP
-app.post('/cp/delivery', async (req, res) => {
-    console.log('Received event from CP:', req.body);
-    res.status(200).json({ status: 'success', message: 'Message received by middleware' });
-});
-
-// Webhook Endpoint for Go High-Level (GHL)
-app.post('/ghl/webhook', async (req, res) => {
-    const eventData = req.body;
-    console.log('Received event from GHL:', eventData);
-
-    // Ignore email messages
-    if (eventData.channel === "email") {
-        console.log("📧 Ignoring email message.");
-        return res.status(200).json({ status: 'ignored', message: 'Email ignored' });
-    }
-
-    // Force iMessages to be treated as SMS
-    if (!eventData.channel || eventData.channel === "imessage") {
-        console.log("⚠️ Message from iMessage tab detected, treating as SMS...");
-        eventData.channel = "sms"; // Override channel to SMS
-    }
-
-    if (eventData.channel === "sms") {
-        console.log("✅ Processing SMS message from GHL:", eventData);
-        await forwardToBlueBubbles(eventData);
-    }
-
-    res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
-});
 
 // Start the server
 app.listen(PORT, () => {
