@@ -101,9 +101,32 @@ async function createNewChat(phoneNumber) {
     }
 }
 
-// Forward messages to BlueBubbles
-async function forwardToBlueBubbles(eventData) {
-    try {
+// Webhook Endpoint for Go High-Level (GHL) with request logging
+app.post('/ghl/webhook', async (req, res) => {
+    console.log('🔍 Full Request Body from GHL:', JSON.stringify(req.body, null, 2));
+
+    const eventData = req.body;
+
+    // Check if the request contains the expected fields
+    if (!eventData || !eventData.type) {
+        console.error("❌ Error: Incoming request is missing 'type' field or is undefined.");
+        return res.status(400).json({ status: 'error', message: "Invalid request format." });
+    }
+
+    // Ignore email messages
+    if (eventData.channel === "email") {
+        console.log("📧 Ignoring email message.");
+        return res.status(200).json({ status: 'ignored', message: 'Email ignored' });
+    }
+
+    // Force iMessages to be treated as SMS
+    if (!eventData.channel || eventData.channel === "imessage") {
+        console.log("⚠️ Message from iMessage tab detected, treating as SMS...");
+        eventData.channel = "sms"; // Override channel to SMS
+    }
+
+    if (eventData.channel === "sms") {
+        console.log("✅ Processing SMS message from GHL:", eventData);
         let chatGUID = await getChatGUID(eventData.to);
 
         if (!chatGUID) {
@@ -113,7 +136,7 @@ async function forwardToBlueBubbles(eventData) {
 
         if (!chatGUID) {
             console.error(`❌ Unable to find or create a chat for ${eventData.to}`);
-            return;
+            return res.status(500).json({ status: 'error', message: 'Failed to retrieve or create chat' });
         }
 
         const messagePayload = {
@@ -124,15 +147,15 @@ async function forwardToBlueBubbles(eventData) {
 
         console.log("📨 Forwarding message to BlueBubbles:", messagePayload);
 
-        const response = await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`, messagePayload, {
+        await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`, messagePayload, {
             headers: { "Content-Type": "application/json" }
         });
 
-        console.log("✅ Successfully sent to BlueBubbles:", response.data);
-    } catch (error) {
-        console.error("❌ Error forwarding message to BlueBubbles:", error.message);
+        console.log("✅ Successfully sent to BlueBubbles");
     }
-}
+
+    res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
+});
 
 // Start the server
 app.listen(PORT, () => {
