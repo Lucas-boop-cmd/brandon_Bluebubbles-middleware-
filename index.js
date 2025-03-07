@@ -125,33 +125,14 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(400).json({ status: 'error', message: "Invalid request format: Missing 'type' field." });
     }
 
-    console.log('✅ Processed event type:', eventData.type);
-
-    // Ignore email messages
-    if (eventData.channel === "email") {
-        console.log("📧 Ignoring email message.");
-        return res.status(200).json({ status: 'ignored', message: 'Email ignored' });
-    }
-
-    const recipientPhone = eventData.to || eventData.contactId || null;
-    if (!recipientPhone) {
-        console.error("❌ Error: No recipient phone number found.");
-        return res.status(400).json({ status: 'error', message: "Missing recipient phone number." });
-    }
-
-    console.log(`📞 Processing message for: ${recipientPhone}`);
-
-    let chatGUID = await getChatGUID(recipientPhone);
-    if (!chatGUID) {
-        console.log(`🔍 No existing chat found for ${recipientPhone}, creating new chat...`);
-        chatGUID = await createNewChat(recipientPhone);
-    }
-
-    if (!chatGUID) {
-        console.error(`❌ Unable to find or create a chat for ${recipientPhone}`);
-        return res.status(500).json({ status: 'error', message: 'Failed to retrieve or create chat' });
-    }
-
     console.log("✅ Successfully processed message.");
     res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
+});
+
+// Start the server and listen on the correct port
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+
+    // Schedule token refresh every 23 hours
+    setInterval(refreshAccessToken, 23 * 60 * 60 * 1000);
 });
