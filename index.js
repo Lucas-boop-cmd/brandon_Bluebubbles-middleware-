@@ -1,4 +1,4 @@
-const express = require('express');
+cconst express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -13,6 +13,7 @@ app.use(bodyParser.json());
 
 const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL;
 const GHL_TOKEN_URL = "https://services.leadconnectorhq.com/oauth/token";
+const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 
 // Store access token and expiration time
 let ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN || null;
@@ -55,6 +56,27 @@ async function getAccessToken() {
     return ACCESS_TOKEN;
 }
 
+// Forward messages to BlueBubbles
+async function forwardToBlueBubbles(eventData) {
+    try {
+        const messagePayload = {
+            recipient: eventData.to, // Ensure this matches BlueBubbles recipient format
+            message: eventData.body, // Ensure this matches BlueBubbles message format
+            service: "iMessage" // Ensure it's sent as iMessage
+        };
+
+        console.log("📨 Forwarding message to BlueBubbles:", messagePayload);
+
+        const response = await axios.post(BLUEBUBBLES_API_URL, messagePayload, {
+            headers: { "Content-Type": "application/json" }
+        });
+
+        console.log("✅ Successfully sent to BlueBubbles:", response.data);
+    } catch (error) {
+        console.error("❌ Error forwarding message to BlueBubbles:", error.message);
+    }
+}
+
 // Endpoint to receive BlueBubbles events
 app.post('/bluebubbles/events', async (req, res) => {
     const eventData = req.body;
@@ -93,6 +115,24 @@ app.post('/cp/delivery', async (req, res) => {
 app.post('/ghl/webhook', async (req, res) => {
     const eventData = req.body;
     console.log('Received event from GHL:', eventData);
+
+    // Ignore email messages
+    if (eventData.channel === "email") {
+        console.log("📧 Ignoring email message.");
+        return res.status(200).json({ status: 'ignored', message: 'Email ignored' });
+    }
+
+    // Force iMessages to be treated as SMS
+    if (!eventData.channel || eventData.channel === "imessage") {
+        console.log("⚠️ Message from iMessage tab detected, treating as SMS...");
+        eventData.channel = "sms"; // Override channel to SMS
+    }
+
+    if (eventData.channel === "sms") {
+        console.log("✅ Processing SMS message from GHL:", eventData);
+        await forwardToBlueBubbles(eventData);
+    }
+
     res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
 });
 
