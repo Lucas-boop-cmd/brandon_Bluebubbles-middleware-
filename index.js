@@ -57,68 +57,11 @@ async function getAccessToken() {
     return ACCESS_TOKEN;
 }
 
-// Function to fetch Chat GUID from BlueBubbles
-async function getChatGUID(phoneNumber) {
-    try {
-        if (!phoneNumber) {
-            console.error("❌ Error: No phone number provided to getChatGUID.");
-            return null;
-        }
-        const response = await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`, {
-            "with": ["lastMessage", "participants"],
-            "limit": 1,
-            "offset": 0,
-            "where": [
-                {
-                    "statement": "chat.participants.address = :address",
-                    "args": { "address": phoneNumber }
-                }
-            ]
-        }, {
-            headers: { "Content-Type": "application/json" }
-        });
-
-        if (response.data.data.length > 0) {
-            return response.data.data[0].guid;
-        }
-        return null;
-    } catch (error) {
-        console.error("❌ Error fetching Chat GUID from BlueBubbles:", error.message);
-        return null;
-    }
-}
-
-// Function to create a new chat if no existing chat is found
-async function createNewChat(phoneNumber) {
-    try {
-        if (!phoneNumber) {
-            console.error("❌ Error: No phone number provided to createNewChat.");
-            return null;
-        }
-        const response = await axios.post(`${BLUEBUBBLES_API_URL}/api/v1/chat/new?password=${BLUEBUBBLES_PASSWORD}`, {
-            "addresses": [phoneNumber],
-            "service": "iMessage"
-        }, {
-            headers: { "Content-Type": "application/json" }
-        });
-
-        return response.data.data.guid;
-    } catch (error) {
-        console.error("❌ Error creating new chat in BlueBubbles:", error.message);
-        return null;
-    }
-}
-
 // Webhook Endpoint for Go High-Level (GHL) with request logging
 app.post('/ghl/webhook', async (req, res) => {
     console.log('🔍 Full Request Body from GHL:', JSON.stringify(req.body, null, 2));
 
-    if (!req.body || typeof req.body !== 'object') {
-        console.error("❌ Error: req.body is missing or malformed.");
-        return res.status(400).json({ status: 'error', message: "Invalid request: req.body is missing or malformed." });
-    }
-
-    console.log("✅ Successfully processed message.");
+    // Always return success to prevent blocking requests
     res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
 });
 
