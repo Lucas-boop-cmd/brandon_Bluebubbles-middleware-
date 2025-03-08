@@ -118,13 +118,6 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(400).json({ status: 'error', message: "Invalid request: req.body is missing or malformed." });
     }
 
-    const eventData = req.body;
-
-    if (!eventData.type) {
-        console.error("❌ Error: Incoming request is missing 'type' field.");
-        return res.status(400).json({ status: 'error', message: "Invalid request format: Missing 'type' field." });
-    }
-
     console.log("✅ Successfully processed message.");
     res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
 });
