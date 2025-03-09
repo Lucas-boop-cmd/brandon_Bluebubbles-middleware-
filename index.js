@@ -57,7 +57,7 @@ async function getAccessToken() {
     return ACCESS_TOKEN;
 }
 
-// ✅ Corrected function to get chat GUID from BlueBubbles using phone number
+// ✅ Corrected function to get chat GUID for one-on-one chats only
 async function getChatGuid(phoneNumber) {
     try {
         const response = await axios.post(
@@ -79,14 +79,17 @@ async function getChatGuid(phoneNumber) {
         );
 
         if (response.data && response.data.data) {
-            // Loop through chats and find the one with the matching phone number
+            // Find direct one-on-one chat (not a group chat)
             const chat = response.data.data.find(chat =>
+                chat.participants.length === 2 &&  // ✅ Ensure only one participant (not a group)
                 chat.participants.some(p => p.address === phoneNumber)
             );
 
             if (chat) {
-                console.log(`✅ Found chat GUID for ${phoneNumber}: ${chat.guid}`);
+                console.log(`✅ Found one-on-one chat GUID for ${phoneNumber}: ${chat.guid}`);
                 return chat.guid;
+            } else {
+                console.error(`⚠️ No one-on-one chat found for ${phoneNumber}.`);
             }
         }
 
@@ -136,12 +139,12 @@ app.post('/ghl/webhook', async (req, res) => {
     }
 
     try {
-        // ✅ Query BlueBubbles for chat GUID using phone number
+        // ✅ Query BlueBubbles for chat GUID using phone number (only one-on-one chats)
         const chatGuid = await getChatGuid(phone);
 
         if (!chatGuid) {
-            console.error("❌ Unable to retrieve chat GUID for phone:", phone);
-            return res.status(400).json({ error: "Chat GUID not found" });
+            console.error("❌ Unable to retrieve one-on-one chat GUID for phone:", phone);
+            return res.status(400).json({ error: "One-on-one chat GUID not found" });
         }
 
         // ✅ Send message to BlueBubbles via Private API
