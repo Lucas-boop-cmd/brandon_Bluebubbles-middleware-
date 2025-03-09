@@ -81,7 +81,7 @@ async function getChatGuid(phoneNumber) {
         if (response.data && response.data.data) {
             // Find direct one-on-one chat (not a group chat)
             const chat = response.data.data.find(chat =>
-                chat.participants.length === 2 &&  // ✅ Ensure only one participant (not a group)
+                chat.participants.length === 1 &&  // ✅ Ensure only one participant (not a group)
                 chat.participants.some(p => p.address === phoneNumber)
             );
 
