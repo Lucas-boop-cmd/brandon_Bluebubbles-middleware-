@@ -60,7 +60,7 @@ async function getAccessToken() {
 // Function to get chat GUID from BlueBubbles using phone number
 async function getChatGuid(phoneNumber) {
     try {
-        const response = await axios.post(`http://myimessage.hopto.org:1234//api/v1/contact/query?password=Dasfad1234$`, {
+        const response = await axios.post(`http://myimessage.hopto.org:1234//api/v1/chat/query?password=Dasfad1234$`, {
             addresses: [phoneNumber]
         });
 
