@@ -57,19 +57,41 @@ async function getAccessToken() {
     return ACCESS_TOKEN;
 }
 
-// Function to get chat GUID from BlueBubbles using phone number
+// ✅ Corrected function to get chat GUID from BlueBubbles using phone number
 async function getChatGuid(phoneNumber) {
     try {
-        const response = await axios.post(`http://myimessage.hopto.org:1234//api/v1/chat/query?password=Dasfad1234$`, {
-            addresses: [phoneNumber]
-        });
+        const response = await axios.post(
+            `http://myimessage.hopto.org:1234/api/v1/chat/query?password=Dasfad1234$`,
+            {
+                "limit": 1000,
+                "offset": 0,
+                "with": [
+                    "participants",
+                    "lastMessage",
+                    "sms",
+                    "archived"
+                ],
+                "sort": "lastmessage"
+            },
+            {
+                headers: { "Content-Type": "application/json" }
+            }
+        );
 
-        if (response.data && response.data.length > 0) {
-            return response.data[0].chatGuid;
-        } else {
-            console.error("⚠️ No chat GUID found for phone number:", phoneNumber);
-            return null;
+        if (response.data && response.data.data) {
+            // Loop through chats and find the one with the matching phone number
+            const chat = response.data.data.find(chat =>
+                chat.participants.some(p => p.address === phoneNumber)
+            );
+
+            if (chat) {
+                console.log(`✅ Found chat GUID for ${phoneNumber}: ${chat.guid}`);
+                return chat.guid;
+            }
         }
+
+        console.error("⚠️ No chat GUID found for phone number:", phoneNumber);
+        return null;
     } catch (error) {
         console.error("❌ Error querying BlueBubbles for chat GUID:", error.response?.data || error.message);
         return null;
@@ -79,11 +101,17 @@ async function getChatGuid(phoneNumber) {
 // Function to send message via BlueBubbles
 async function sendMessageToBlueBubbles(chatGuid, messageId, messageText) {
     try {
-        const response = await axios.post(`http://myimessage.hopto.org:1234//api/v1/message/text?password=Dasfad1234$`, {
-            chatGuid: chatGuid,
-            tempGuid: messageId,
-            message: messageText
-        });
+        const response = await axios.post(
+            `http://myimessage.hopto.org:1234/api/v1/message/text?password=Dasfad1234$`,
+            {
+                chatGuid: chatGuid,
+                tempGuid: messageId,
+                message: messageText
+            },
+            {
+                headers: { "Content-Type": "application/json" }
+            }
+        );
 
         console.log("✅ Message sent to BlueBubbles:", response.data);
     } catch (error) {
@@ -103,7 +131,7 @@ app.post('/ghl/webhook', async (req, res) => {
     }
 
     try {
-        // Query BlueBubbles for chat GUID using phone number
+        // ✅ Query BlueBubbles for chat GUID using phone number
         const chatGuid = await getChatGuid(phone);
 
         if (!chatGuid) {
@@ -111,7 +139,7 @@ app.post('/ghl/webhook', async (req, res) => {
             return res.status(400).json({ error: "Chat GUID not found" });
         }
 
-        // Send message to BlueBubbles
+        // ✅ Send message to BlueBubbles
         await sendMessageToBlueBubbles(chatGuid, messageId, message);
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
 
@@ -128,4 +156,3 @@ app.listen(PORT, () => {
     // Schedule token refresh every 23 hours
     setInterval(refreshAccessToken, 23 * 60 * 60 * 1000);
 });
-
