@@ -98,7 +98,7 @@ async function getChatGuid(phoneNumber) {
     }
 }
 
-// Function to send message via BlueBubbles
+// ✅ Updated Function to Send Message via BlueBubbles with Private API
 async function sendMessageToBlueBubbles(chatGuid, messageId, messageText) {
     try {
         const response = await axios.post(
@@ -106,14 +106,19 @@ async function sendMessageToBlueBubbles(chatGuid, messageId, messageText) {
             {
                 chatGuid: chatGuid,
                 tempGuid: messageId,
-                message: messageText
+                message: messageText,
+                method: "private-api" // ✅ Force sending via Private API
             },
             {
                 headers: { "Content-Type": "application/json" }
             }
         );
 
-        console.log("✅ Message sent to BlueBubbles:", response.data);
+        if (response.data && response.data.status === "success") {
+            console.log(`✅ Message sent successfully via Private API: ${messageText}`);
+        } else {
+            console.error("⚠️ Message may not have been sent properly:", response.data);
+        }
     } catch (error) {
         console.error("❌ Error sending message to BlueBubbles:", error.response?.data || error.message);
     }
@@ -139,7 +144,7 @@ app.post('/ghl/webhook', async (req, res) => {
             return res.status(400).json({ error: "Chat GUID not found" });
         }
 
-        // ✅ Send message to BlueBubbles
+        // ✅ Send message to BlueBubbles via Private API
         await sendMessageToBlueBubbles(chatGuid, messageId, message);
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
 
@@ -156,3 +161,4 @@ app.listen(PORT, () => {
     // Schedule token refresh every 23 hours
     setInterval(refreshAccessToken, 23 * 60 * 60 * 1000);
 });
+
