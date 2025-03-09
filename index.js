@@ -41,7 +41,7 @@ async function refreshAccessToken() {
 
         ACCESS_TOKEN = response.data.access_token;
         REFRESH_TOKEN = response.data.refresh_token;
-        TOKEN_EXPIRATION = Date.now() + 23 * 60 * 60 * 1000; // Set to refresh 1 hour before expiration
+        TOKEN_EXPIRATION = Date.now() + 23 * 60 * 60 * 1000; // Refresh 1 hour before expiration
 
         console.log("✅ Access token refreshed successfully!");
     } catch (error) {
@@ -65,12 +65,7 @@ async function getChatGuid(phoneNumber) {
             {
                 "limit": 1000,
                 "offset": 0,
-                "with": [
-                    "participants",
-                    "lastMessage",
-                    "sms",
-                    "archived"
-                ],
+                "with": ["participants", "lastMessage", "sms", "archived"],
                 "sort": "lastmessage"
             },
             {
@@ -79,9 +74,9 @@ async function getChatGuid(phoneNumber) {
         );
 
         if (response.data && response.data.data) {
-            // Find direct one-on-one chat (not a group chat)
+            // ✅ Ensure chat has exactly ONE participant (recipient only, not a group)
             const chat = response.data.data.find(chat =>
-                chat.participants.length === 1 &&  // ✅ Ensure only one participant (not a group)
+                chat.participants.length === 1 &&
                 chat.participants.some(p => p.address === phoneNumber)
             );
 
@@ -101,8 +96,8 @@ async function getChatGuid(phoneNumber) {
     }
 }
 
-// ✅ Updated Function to Send Message via BlueBubbles with Private API
-async function sendMessageToBlueBubbles(chatGuid, messageId, messageText) {
+// ✅ Updated Function to Send Message via BlueBubbles with Private API & Notify GHL
+async function sendMessageToBlueBubbles(chatGuid, messageId, messageText, phone) {
     try {
         const response = await axios.post(
             `http://myimessage.hopto.org:1234/api/v1/message/text?password=Dasfad1234$`,
@@ -119,11 +114,42 @@ async function sendMessageToBlueBubbles(chatGuid, messageId, messageText) {
 
         if (response.data && response.data.status === "success") {
             console.log(`✅ Message sent successfully via Private API: ${messageText}`);
+
+            // ✅ Notify Go High-Level that the message was successfully sent
+            await updateGHLMessageStatus(phone, messageId, "delivered");
         } else {
             console.error("⚠️ Message may not have been sent properly:", response.data);
+            await updateGHLMessageStatus(phone, messageId, "failed");
         }
     } catch (error) {
         console.error("❌ Error sending message to BlueBubbles:", error.response?.data || error.message);
+        await updateGHLMessageStatus(phone, messageId, "failed");
+    }
+}
+
+// ✅ Function to Update Message Status in Go High-Level
+async function updateGHLMessageStatus(phone, messageId, status) {
+    try {
+        const accessToken = await getAccessToken(); // Ensure we have a valid GHL API token
+
+        const response = await axios.post(
+            `${GHL_WEBHOOK_URL}/conversations/messages/status`,
+            {
+                phone: phone,
+                messageId: messageId,
+                status: status // ✅ Update status to "delivered" or "failed"
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        console.log(`✅ Successfully updated message status in GHL: ${status}`);
+    } catch (error) {
+        console.error("❌ Failed to update message status in GHL:", error.response?.data || error.message);
     }
 }
 
@@ -147,8 +173,8 @@ app.post('/ghl/webhook', async (req, res) => {
             return res.status(400).json({ error: "One-on-one chat GUID not found" });
         }
 
-        // ✅ Send message to BlueBubbles via Private API
-        await sendMessageToBlueBubbles(chatGuid, messageId, message);
+        // ✅ Send message to BlueBubbles via Private API & Notify GHL
+        await sendMessageToBlueBubbles(chatGuid, messageId, message, phone);
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
 
     } catch (error) {
@@ -164,4 +190,3 @@ app.listen(PORT, () => {
     // Schedule token refresh every 23 hours
     setInterval(refreshAccessToken, 23 * 60 * 60 * 1000);
 });
-
