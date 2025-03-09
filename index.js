@@ -57,12 +57,68 @@ async function getAccessToken() {
     return ACCESS_TOKEN;
 }
 
-// Webhook Endpoint for Go High-Level (GHL) with request logging
+// Function to get chat GUID from BlueBubbles using phone number
+async function getChatGuid(phoneNumber) {
+    try {
+        const response = await axios.post(`http://myimessage.hopto.org:1234//api/v1/contact/query?password=Dasfad1234$`, {
+            addresses: [phoneNumber]
+        });
+
+        if (response.data && response.data.length > 0) {
+            return response.data[0].chatGuid;
+        } else {
+            console.error("⚠️ No chat GUID found for phone number:", phoneNumber);
+            return null;
+        }
+    } catch (error) {
+        console.error("❌ Error querying BlueBubbles for chat GUID:", error.response?.data || error.message);
+        return null;
+    }
+}
+
+// Function to send message via BlueBubbles
+async function sendMessageToBlueBubbles(chatGuid, messageId, messageText) {
+    try {
+        const response = await axios.post(`http://myimessage.hopto.org:1234//api/v1/message/text?password=Dasfad1234$`, {
+            chatGuid: chatGuid,
+            tempGuid: messageId,
+            message: messageText
+        });
+
+        console.log("✅ Message sent to BlueBubbles:", response.data);
+    } catch (error) {
+        console.error("❌ Error sending message to BlueBubbles:", error.response?.data || error.message);
+    }
+}
+
+// Webhook Endpoint for Go High-Level (GHL)
 app.post('/ghl/webhook', async (req, res) => {
     console.log('🔍 Full Request Body from GHL:', JSON.stringify(req.body, null, 2));
 
-    // Always return success to prevent blocking requests
-    res.status(200).json({ status: 'success', message: 'Webhook received from GHL' });
+    const { phone, messageId, message } = req.body;
+
+    if (!phone || !messageId || !message) {
+        console.error("❌ Missing required fields in webhook payload");
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+        // Query BlueBubbles for chat GUID using phone number
+        const chatGuid = await getChatGuid(phone);
+
+        if (!chatGuid) {
+            console.error("❌ Unable to retrieve chat GUID for phone:", phone);
+            return res.status(400).json({ error: "Chat GUID not found" });
+        }
+
+        // Send message to BlueBubbles
+        await sendMessageToBlueBubbles(chatGuid, messageId, message);
+        res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
+
+    } catch (error) {
+        console.error("❌ Error processing webhook:", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 // Start the server and listen on the correct port
@@ -72,3 +128,4 @@ app.listen(PORT, () => {
     // Schedule token refresh every 23 hours
     setInterval(refreshAccessToken, 23 * 60 * 60 * 1000);
 });
+
