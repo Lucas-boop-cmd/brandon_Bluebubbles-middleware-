@@ -30,7 +30,8 @@ async function refreshAccessToken() {
                 grant_type: 'refresh_token',
                 client_id: CLIENT_ID,
                 client_secret: CLIENT_SECRET,
-                refresh_token: REFRESH_TOKEN
+                refresh_token: REFRESH_TOKEN,
+                user_type: 'company' // ✅ Adding user_type
             }).toString(),
             { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
         );
