@@ -13,6 +13,13 @@ const REFRESH_TOKEN = process.env.GHL_REFRESH_TOKEN;
 const CLIENT_ID = process.env.GHL_CLIENT_ID;
 const CLIENT_SECRET = process.env.GHL_CLIENT_SECRET;
 
+// ✅ Debugging: Log Environment Variables
+console.log("🔍 Checking Environment Variables:");
+console.log("GHL_CLIENT_ID:", CLIENT_ID ? "✅ Loaded" : "❌ Not Found");
+console.log("GHL_CLIENT_SECRET:", CLIENT_SECRET ? "✅ Loaded" : "❌ Not Found");
+console.log("GHL_REFRESH_TOKEN:", REFRESH_TOKEN ? "✅ Loaded" : "❌ Not Found");
+console.log("GHL_ACCESS_TOKEN:", ACCESS_TOKEN ? "✅ Loaded" : "❌ Not Found");
+
 // ✅ Function to Refresh Access Token
 async function refreshAccessToken() {
     try {
@@ -63,5 +70,4 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     refreshAccessToken(); // ✅ Refresh token once on startup
 });
-
 
