@@ -1,9 +1,42 @@
 // ✅ Ensure Express is set up first
 const express = require('express');
+const axios = require('axios');
 const app = express();
 const bodyParser = require('body-parser');
+require('dotenv').config();
 
 app.use(bodyParser.json());
+
+// ✅ Load environment variables
+let ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN;
+const REFRESH_TOKEN = process.env.GHL_REFRESH_TOKEN;
+const CLIENT_ID = process.env.GHL_CLIENT_ID;
+const CLIENT_SECRET = process.env.GHL_CLIENT_SECRET;
+
+// ✅ Function to Refresh Access Token
+async function refreshAccessToken() {
+    try {
+        console.log("🔄 Refreshing Access Token...");
+        const response = await axios.post('https://services.leadconnectorhq.com/oauth/token', null, {
+            params: {
+                grant_type: 'refresh_token',
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                refresh_token: REFRESH_TOKEN,
+            },
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        });
+
+        ACCESS_TOKEN = response.data.access_token;
+        console.log("✅ New Access Token:", ACCESS_TOKEN);
+
+    } catch (error) {
+        console.error("❌ Failed to refresh access token:", error.response ? error.response.data : error.message);
+    }
+}
+
+// ✅ Schedule Token Refresh Every 20 Hours
+setInterval(refreshAccessToken, 20 * 60 * 60 * 1000); // 20 hours in milliseconds
 
 // ✅ Add GET route to check if webhook is live
 app.get('/ghl/webhook', (req, res) => {
@@ -28,6 +61,7 @@ app.post('/ghl/webhook', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+    refreshAccessToken(); // ✅ Refresh token once on startup
 });
 
 
