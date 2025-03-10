@@ -24,15 +24,16 @@ console.log("GHL_ACCESS_TOKEN:", ACCESS_TOKEN ? "✅ Loaded" : "❌ Not Found");
 async function refreshAccessToken() {
     try {
         console.log("🔄 Refreshing Access Token...");
-        const response = await axios.post('https://services.leadconnectorhq.com/oauth/token', null, {
-            params: {
+        const response = await axios.post(
+            'https://services.leadconnectorhq.com/oauth/token',
+            new URLSearchParams({
                 grant_type: 'refresh_token',
                 client_id: CLIENT_ID,
                 client_secret: CLIENT_SECRET,
-                refresh_token: REFRESH_TOKEN,
-            },
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        });
+                refresh_token: REFRESH_TOKEN
+            }).toString(),
+            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+        );
 
         ACCESS_TOKEN = response.data.access_token;
         console.log("✅ New Access Token:", ACCESS_TOKEN);
@@ -70,4 +71,3 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     refreshAccessToken(); // ✅ Refresh token once on startup
 });
-
