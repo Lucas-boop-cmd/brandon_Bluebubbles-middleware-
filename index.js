@@ -182,12 +182,7 @@ app.post('/ghl/webhook', async (req, res) => {
     try {
         // ✅ Find the corresponding chat in BlueBubbles using chatIdentifier
         const blueBubblesChats = await axios.get(
-            `${BLUEBUBBLES_API_URL}/api/v1/chats`,
-            {
-                headers: {
-                    "Authorization": `Basic ${Buffer.from(`bluebubbles:${BLUEBUBBLES_PASSWORD}`).toString('base64')}`
-                }
-            }
+            `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`
         );
 
         const chat = blueBubblesChats.data.find(chat => 
@@ -201,16 +196,10 @@ app.post('/ghl/webhook', async (req, res) => {
 
         // ✅ Send the message to BlueBubbles
         await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/messages`,
+            `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
                 chatGuid: chat.guid,
                 message: message
-            },
-            {
-                headers: {
-                    "Authorization": `Basic ${Buffer.from(`bluebubbles:${BLUEBUBBLES_PASSWORD}`).toString('base64')}`,
-                    "Content-Type": "application/json"
-                }
             }
         );
 
