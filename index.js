@@ -23,7 +23,7 @@ console.log("GHL_REFRESH_TOKEN:", REFRESH_TOKEN ? "✅ Loaded" : "❌ Not Found"
 console.log("GHL_ACCESS_TOKEN:", ACCESS_TOKEN ? "✅ Loaded" : "❌ Not Found");
 console.log("BLUEBUBBLES_API_URL:", BLUEBUBBLES_API_URL ? "✅ Loaded" : "❌ Not Found");
 
-// ✅ Function to Refresh Access Token
+// ✅ Function to Refresh Access Token (Now Includes Version Header)
 async function refreshAccessToken() {
     try {
         console.log("🔄 Refreshing Access Token...");
@@ -38,7 +38,12 @@ async function refreshAccessToken() {
         const response = await axios.post(
             'https://services.leadconnectorhq.com/oauth/token',
             requestBody.toString(),
-            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+            {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Version": "2021-04-15"
+                }
+            }
         );
 
         ACCESS_TOKEN = response.data.access_token;
@@ -80,9 +85,15 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     try {
         // ✅ Find the corresponding conversation in Go High-Level
-        const ghlConversation = await axios.get(`https://services.leadconnectorhq.com/conversations?phone_number=${sender}`, {
-            headers: { "Authorization": `Bearer ${ACCESS_TOKEN}` }
-        });
+        const ghlConversation = await axios.get(
+            `https://services.leadconnectorhq.com/conversations?phone_number=${sender}`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                    "Version": "2021-04-15"
+                }
+            }
+        );
 
         let conversationId = ghlConversation.data?.conversations?.[0]?.id;
 
@@ -93,7 +104,13 @@ app.post('/bluebubbles/events', async (req, res) => {
             const newConversation = await axios.post(
                 'https://services.leadconnectorhq.com/conversations',
                 { phone_number: sender },
-                { headers: { "Authorization": `Bearer ${ACCESS_TOKEN}`, "Content-Type": "application/json" } }
+                {
+                    headers: {
+                        "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                        "Content-Type": "application/json",
+                        "Version": "2021-04-15"
+                    }
+                }
             );
 
             conversationId = newConversation.data.id;
@@ -107,7 +124,13 @@ app.post('/bluebubbles/events', async (req, res) => {
                 message: text,
                 sent_by: sent_by
             },
-            { headers: { "Authorization": `Bearer ${ACCESS_TOKEN}`, "Content-Type": "application/json" } }
+            {
+                headers: {
+                    "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                    "Content-Type": "application/json",
+                    "Version": "2021-04-15"
+                }
+            }
         );
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
