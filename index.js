@@ -185,13 +185,16 @@ app.post('/ghl/webhook', async (req, res) => {
         const blueBubblesChats = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
-                limit: 1,
+                limit: 1000,
                 offset: 0,
                 with: ["lastMessage", "sms", "archived"],
-                sort: "lastmessage",
-                where: {
-                    chatIdentifier: phone
-                }
+                sort: ["participants"],
+                where: [
+                    {
+                        statement: "chat.participants $elemMatch :phone",
+                        args: { phone: phoneNumber }
+                    }
+                ]
             },
             {
                 headers: {
@@ -208,8 +211,13 @@ app.post('/ghl/webhook', async (req, res) => {
             return res.status(500).json({ error: "Unexpected response format from BlueBubbles API" });
         }
 
+        // Log all chat identifiers and participants for debugging
+        blueBubblesChats.data.data.forEach(chat => {
+            console.log(`🔍 Chat Identifier: ${chat.participants}, Participants: ${chat.participants.map(p => p.address).join(', ')}`);
+        });
+
         const chat = blueBubblesChats.data.data.find(chat => 
-            chat.chatIdentifier === phone
+            chat.participants.some(participant => participant.address === phone)
         );
 
         if (!chat) {
