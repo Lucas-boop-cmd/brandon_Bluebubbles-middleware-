@@ -180,22 +180,36 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
-        // ✅ Find the corresponding chat in BlueBubbles using handle address
-        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
-        const blueBubblesHandle = await axios.get(
-            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
+        // ✅ Find the corresponding chat in BlueBubbles using chatIdentifier
+        console.log(`🔍 Querying BlueBubbles for chat with phone: ${phone}`);
+        const blueBubblesChats = await axios.post(
+            `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
+            {
+                limit: 1,
+                offset: 0,
+                with: ["lastMessage", "sms", "archived"],
+                sort: "lastmessage",
+                where: {
+                    participants: phone
+                }
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
         );
 
-        console.log(`🔍 BlueBubbles response:`, blueBubblesHandle.data);
+        console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
 
-         // Check if the response contains the expected 'chats' property
-         if (!blueBubblesHandle.data.chats) {
-            console.error("❌ 'chats' property is missing in BlueBubbles response:", blueBubblesHandle.data);
-            return res.status(500).json({ error: "'chats' property is missing in BlueBubbles response" });
+        // Check if the response is an array
+        if (!Array.isArray(blueBubblesChats.data)) {
+            console.error("❌ Unexpected response format from BlueBubbles API:", blueBubblesChats.data);
+            return res.status(500).json({ error: "Unexpected response format from BlueBubbles API" });
         }
 
-        const chat = blueBubblesHandle.data.chats.find(chat => 
-            chat.participants.length === 1 && chat.participants[0].address === phone
+        const chat = blueBubblesChats.data.find(chat => 
+            chat.participants === phone
         );
 
         if (!chat) {
@@ -204,7 +218,7 @@ app.post('/ghl/webhook', async (req, res) => {
         }
 
         console.log(`✅ Found Chat GUID: ${chat.guid} for ${phone}`);
-
+        
         // ✅ Send the message to BlueBubbles
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid}`);
         await axios.post(
