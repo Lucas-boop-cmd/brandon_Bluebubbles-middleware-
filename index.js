@@ -163,16 +163,19 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { phone, message, userId, conversationProviderId } = data;
+    const { phone, message, userId, conversationProviderId, messageType } = data;
 
-    // ✅ Filter events by conversation provider ID and userId
-    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70' || userId !== '36E2xrEV92vFl7b1fUJP') {
-        console.log("❌ Ignoring event from unsupported conversation provider or user:", conversationProviderId, userId);
-        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider or user' });
+    // ✅ Filter events by conversation provider ID, userId, and messageType
+    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70' || userId !== '36E2xrEV92vFl7b1fUJP' || messageType === 'Email') {
+        console.log("❌ Ignoring event from unsupported conversation provider, user, or message type:", conversationProviderId, userId, messageType);
+        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider, user, or message type' });
     }
 
     if (!phone || !message || !userId) {
         console.error("❌ Missing required fields in Go High-Level event:", data);
+        if (!phone) console.error("❌ Missing field: phone");
+        if (!message) console.error("❌ Missing field: message");
+        if (!userId) console.error("❌ Missing field: userId");
         return res.status(400).json({ error: "Missing required fields" });
     }
 
