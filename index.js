@@ -91,9 +91,6 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
 
-    // ✅ Determine if it's inbound or outbound
-    const direction = isFromMe ? "outbound" : "inbound";
-
     try {
         // ✅ Find the corresponding conversation in Go High-Level
         const ghlConversation = await axios.get(
@@ -106,10 +103,10 @@ app.post('/bluebubbles/events', async (req, res) => {
             }
         );
 
-        let conversationId = ghlConversation.data?.conversations?.[0]?.id;
+        let phone = ghlConversation.data?.conversations?.[0]?.id;
 
         // ✅ If conversation does not exist, create one
-        if (!conversationId) {
+        if (!phone) {
             console.log("📌 No existing conversation found, creating a new one...");
 
             const newConversation = await axios.post(
@@ -124,16 +121,16 @@ app.post('/bluebubbles/events', async (req, res) => {
                 }
             );
 
-            conversationId = newConversation.data.id;
+            phone = newConversation.data.id;
         }
 
         // ✅ Send the message to Go High-Level
         await axios.post(
-            `https://services.leadconnectorhq.com/conversations/messages/${direction}`,
+            `https://services.leadconnectorhq.com/conversations/messages/${isFromMe ? "outbound" : "inbound"}`,
             {
-                conversationId: conversationId,
+                phone: phone,
                 message: text,
-                sent_by: isFromMe ? "Me (Sent from iMessage)" : address // ✅ Corrected Logic
+                sent_by: isFromMe ? "Me (Sent from iMessage)" : address
             },
             {
                 headers: {
@@ -166,20 +163,20 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { conversationId, message, userid, conversationProviderId } = data;
+    const { phone, message, userId, conversationProviderId } = data;
 
-    // ✅ Filter events by conversation provider ID and userid
-    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70' || userid !== '36E2xrEV92vFl7b1fUJP') {
-        console.log("❌ Ignoring event from unsupported conversation provider or user:", conversationProviderId, userid);
+    // ✅ Filter events by conversation provider ID and userId
+    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70' || userId !== '36E2xrEV92vFl7b1fUJP') {
+        console.log("❌ Ignoring event from unsupported conversation provider or user:", conversationProviderId, userId);
         return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider or user' });
     }
 
-    if (!conversationId || !message || !userid) {
+    if (!phone || !message || !userId) {
         console.error("❌ Missing required fields in Go High-Level event:", data);
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    console.log(`🔍 New message from ${userid}: ${message}`);
+    console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
         // ✅ Find the corresponding chat in BlueBubbles
@@ -193,11 +190,11 @@ app.post('/ghl/webhook', async (req, res) => {
         );
 
         const chat = blueBubblesChats.data.find(chat => 
-            chat.participants.length === 1 && chat.participants[0].address === userid
+            chat.participants.length === 1 && chat.participants[0].address === phone
         );
 
         if (!chat) {
-            console.error("❌ No matching chat found in BlueBubbles for:", userid);
+            console.error("❌ No matching chat found in BlueBubbles for:", userId);
             return res.status(404).json({ error: "No matching chat found" });
         }
 
