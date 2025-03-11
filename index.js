@@ -219,8 +219,13 @@ app.post('/ghl/webhook', async (req, res) => {
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
 
     } catch (error) {
-        console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
-        res.status(500).json({ error: "Internal server error" });
+        if (error.response && error.response.status === 404) {
+            console.error("❌ No matching chat found in BlueBubbles for:", phone);
+            res.status(404).json({ error: "No matching chat found" });
+        } else {
+            console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
+            res.status(500).json({ error: "Internal server error" });
+        }
     }
 });
 
