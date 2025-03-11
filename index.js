@@ -203,12 +203,12 @@ app.post('/ghl/webhook', async (req, res) => {
         console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
 
         // Check if the response contains the expected data array
-        if (!Array.isArray(response.data.data)) {
-            console.error("❌ Unexpected response format from BlueBubbles API:", response.data);
+        if (!Array.isArray(blueBubblesChats.data.data)) {
+            console.error("❌ Unexpected response format from BlueBubbles API:", blueBubblesChats.data);
             return res.status(500).json({ error: "Unexpected response format from BlueBubbles API" });
         }
 
-        const chat = response.data.data.find(chat => 
+        const chat = blueBubblesChats.data.data.find(chat => 
             chat.chatIdentifier === phone
         );
 
