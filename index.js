@@ -23,7 +23,7 @@ console.log("GHL_REFRESH_TOKEN:", REFRESH_TOKEN ? "✅ Loaded" : "❌ Not Found"
 console.log("GHL_ACCESS_TOKEN:", ACCESS_TOKEN ? "✅ Loaded" : "❌ Not Found");
 console.log("BLUEBUBBLES_API_URL:", BLUEBUBBLES_API_URL ? "✅ Loaded" : "❌ Not Found");
 
-// ✅ Function to Refresh Access Token (Now Includes Version Header)
+// ✅ Function to Refresh Access Token
 async function refreshAccessToken() {
     try {
         console.log("🔄 Refreshing Access Token...");
@@ -47,7 +47,7 @@ async function refreshAccessToken() {
         );
 
         ACCESS_TOKEN = response.data.access_token;
-        REFRESH_TOKEN = response.data.refresh_token; // ✅ Store the new refresh token
+        REFRESH_TOKEN = response.data.refresh_token;
 
         console.log("✅ New Access Token:", ACCESS_TOKEN);
         console.log("🔄 Updated Refresh Token:", REFRESH_TOKEN);
@@ -58,10 +58,10 @@ async function refreshAccessToken() {
     }
 }
 
-// ✅ Schedule the first token refresh 1 hour (3600000ms) after deployment
+// ✅ Schedule the first token refresh 1 hour after deployment
 setTimeout(() => {
-    refreshAccessToken(); // 🔄 First refresh after 1 hour
-    setInterval(refreshAccessToken, 20 * 60 * 60 * 1000); // 🔄 Then refresh every 20 hours
+    refreshAccessToken(); 
+    setInterval(refreshAccessToken, 20 * 60 * 60 * 1000);
 }, 60 * 60 * 1000);
 
 console.log("⏳ First token refresh scheduled for 1 hour from now...");
@@ -70,23 +70,30 @@ console.log("⏳ First token refresh scheduled for 1 hour from now...");
 app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
 
-    const { guid, text, sender, is_from_me, timestamp } = req.body;
+    const { type, data } = req.body;
 
-    if (!guid || !text || !sender) {
-        console.error("❌ Missing required fields in BlueBubbles event:", req.body);
+    // ✅ Ensure we process only "new-message" events
+    if (type !== "new-message" || !data) {
+        console.error("❌ Invalid or missing message data:", req.body);
+        return res.status(400).json({ error: "Invalid event type or missing data" });
+    }
+
+    const { guid, text, address, isFromMe } = data;
+
+    if (!guid || !text || !address) {
+        console.error("❌ Missing required fields in BlueBubbles event:", data);
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    console.log(`🔍 New message from ${sender}: ${text}`);
+    console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
 
     // ✅ Determine if it's inbound or outbound
-    const direction = is_from_me ? "outbound" : "inbound";
-    const sent_by = is_from_me ? "36E2xrEV92vFl7b1fUJP" : sender;
+    const direction = isFromMe ? "outbound" : "inbound";
 
     try {
         // ✅ Find the corresponding conversation in Go High-Level
         const ghlConversation = await axios.get(
-            `https://services.leadconnectorhq.com/conversations?phone_number=${sender}`,
+            `https://services.leadconnectorhq.com/conversations?phone_number=${address}`,
             {
                 headers: {
                     "Authorization": `Bearer ${ACCESS_TOKEN}`,
@@ -103,7 +110,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
             const newConversation = await axios.post(
                 'https://services.leadconnectorhq.com/conversations',
-                { phone_number: sender },
+                { phone_number: address },
                 {
                     headers: {
                         "Authorization": `Bearer ${ACCESS_TOKEN}`,
@@ -122,7 +129,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             {
                 conversationId: conversationId,
                 message: text,
-                sent_by: sent_by
+                sent_by: isFromMe ? "Me (Sent from iMessage)" : address // ✅ Corrected Logic
             },
             {
                 headers: {
@@ -148,3 +155,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
+
