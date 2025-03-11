@@ -185,19 +185,20 @@ app.post('/ghl/webhook', async (req, res) => {
         const blueBubblesChats = await axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
-                params: {
-                    limit: 1000,
-                    offset: 0,
-                    with: ["participants"],
-                    sort: "lastmessage"
-                }
+params: {
+                limit: 1000,
+                offset: 0,
+                with: ["participants"],
+                sort: "lastmessage"
+            }
             }
         );
 
         console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
 
-        const chats = blueBubblesChats.data.data;
-        const chat = chats.find(c => c.participants.includes(phone));
+        const chat = blueBubblesChats.data.find(chat => 
+chat.participants.some(participant => participant.address === phone)
+);
 
         if (!chat) {
             console.log(`❌ No chat found for phone number: ${phone}`);
@@ -205,14 +206,13 @@ app.post('/ghl/webhook', async (req, res) => {
         }
 
         console.log(`✅ Found Chat GUID: ${chat.guid} for ${phone}`);
-
+        
         // ✅ Send the message to BlueBubbles
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid}`);
         await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
-            {
-                chatGuid: chat.guid,
-                message: message
+            `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`, {
+         chatGuid: chat.guid,
+         message: message
             }
         );
 
