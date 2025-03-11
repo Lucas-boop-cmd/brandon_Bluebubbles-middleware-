@@ -49,6 +49,10 @@ async function refreshAccessToken() {
         ACCESS_TOKEN = response.data.access_token;
         REFRESH_TOKEN = response.data.refresh_token;
 
+        // ✅ Update environment variables
+        process.env.GHL_ACCESS_TOKEN = ACCESS_TOKEN;
+        process.env.GHL_REFRESH_TOKEN = REFRESH_TOKEN;
+
         console.log("✅ New Access Token:", ACCESS_TOKEN);
         console.log("🔄 Updated Refresh Token:", REFRESH_TOKEN);
         console.log(`⏳ Next refresh scheduled in 20 hours.`);
@@ -146,6 +150,72 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     } catch (error) {
         console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles
+app.post('/ghl/webhook', async (req, res) => {
+    console.log('📥 Received Go High-Level event:', req.body);
+
+    const { type, data } = req.body;
+
+    // ✅ Ensure we process only "new-message" events
+    if (type !== "new-message" || !data) {
+        console.error("❌ Invalid or missing message data:", req.body);
+        return res.status(400).json({ error: "Invalid event type or missing data" });
+    }
+
+    const { conversationId, message, sent_by } = data;
+
+    if (!conversationId || !message || !sent_by) {
+        console.error("❌ Missing required fields in Go High-Level event:", data);
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    console.log(`🔍 New message from ${sent_by}: ${message}`);
+
+    try {
+        // ✅ Find the corresponding chat in BlueBubbles
+        const blueBubblesChats = await axios.get(
+            `${BLUEBUBBLES_API_URL}/api/v1/chats`,
+            {
+                headers: {
+                    "Authorization": `Basic ${Buffer.from(`bluebubbles:${BLUEBUBBLES_PASSWORD}`).toString('base64')}`
+                }
+            }
+        );
+
+        const chat = blueBubblesChats.data.find(chat => 
+            chat.participants.length === 1 && chat.participants[0].address === sent_by
+        );
+
+        if (!chat) {
+            console.error("❌ No matching chat found in BlueBubbles for:", sent_by);
+            return res.status(404).json({ error: "No matching chat found" });
+        }
+
+        // ✅ Send the message to BlueBubbles
+        await axios.post(
+            `${BLUEBUBBLES_API_URL}/api/v1/messages`,
+            {
+                chatGuid: chat.guid,
+                message: message
+            },
+            {
+                headers: {
+                    "Authorization": `Basic ${Buffer.from(`bluebubbles:${BLUEBUBBLES_PASSWORD}`).toString('base64')}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        console.log("✅ Message successfully forwarded to BlueBubbles!");
+
+        res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
+
+    } catch (error) {
+        console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 });
