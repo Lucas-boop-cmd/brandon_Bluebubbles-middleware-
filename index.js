@@ -180,7 +180,7 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
-        // ✅ Find the corresponding chat in BlueBubbles
+        // ✅ Find the corresponding chat in BlueBubbles using chatIdentifier
         const blueBubblesChats = await axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/chats`,
             {
@@ -191,7 +191,7 @@ app.post('/ghl/webhook', async (req, res) => {
         );
 
         const chat = blueBubblesChats.data.find(chat => 
-            chat.participants.length === 1 && chat.participants[0].address === phone
+            chat.chatIdentifier === phone
         );
 
         if (!chat) {
