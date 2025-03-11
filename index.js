@@ -190,7 +190,7 @@ app.post('/ghl/webhook', async (req, res) => {
                 with: ["lastMessage", "sms", "archived"],
                 sort: "lastmessage",
                 where: {
-                    participants: phone
+                    chatIdentifer: phone
                 }
             },
             {
@@ -209,7 +209,7 @@ app.post('/ghl/webhook', async (req, res) => {
         }
 
         const chat = blueBubblesChats.data.find(chat => 
-            chat.participants === phone
+            chat.chatIdentifier === phone
         );
 
         if (!chat) {
