@@ -182,23 +182,26 @@ app.post('/ghl/webhook', async (req, res) => {
     try {
         // ✅ Find the corresponding chat in BlueBubbles using chatIdentifier
         console.log(`🔍 Querying BlueBubbles for chat with phone: ${phone}`);
-        const blueBubblesChats = await axios.get(
+        const blueBubblesChats = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
-params: {
                 limit: 1000,
                 offset: 0,
-                with: ["participants"],
+                with: ["lastMessage", "sms", "archived"],
                 sort: "lastmessage"
-            }
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
             }
         );
 
         console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
 
         const chat = blueBubblesChats.data.find(chat => 
-chat.participants.some(participant => participant.address === phone)
-);
+            chat.participants === phone
+        );
 
         if (!chat) {
             console.log(`❌ No chat found for phone number: ${phone}`);
@@ -210,9 +213,15 @@ chat.participants.some(participant => participant.address === phone)
         // ✅ Send the message to BlueBubbles
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid}`);
         await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`, {
-         chatGuid: chat.guid,
-         message: message
+            `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
+            {
+                chatGuid: chat.guid,
+                message: message
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
             }
         );
 
