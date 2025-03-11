@@ -155,20 +155,19 @@ app.post('/bluebubbles/events', async (req, res) => {
 app.post('/ghl/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
-    const { type, data } = req.body;
-
-    // ✅ Ensure we process only "new-message" events
-    if (type !== "new-message" || !data) {
-        console.error("❌ Invalid or missing message data:", req.body);
-        return res.status(400).json({ error: "Invalid event type or missing data" });
-    }
+    const { data } = req.body;
 
     const { phone, message, userId, conversationProviderId } = data;
 
-    // ✅ Filter events by conversation provider ID, userId, type, and phone
-    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70' || userId !== '36E2xrEV92vFl7b1fUJP') {
-        console.log("❌ Ignoring event from unsupported conversation provider or user:", conversationProviderId, userId);
-        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider or user' });
+    // ✅ Filter events by conversation provider ID, userId, and phone
+    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
+        console.log("❌ Ignoring event from unsupported conversation provider:", conversationProviderId);
+        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
+    }
+
+    if (userId !== '36E2xrEV92vFl7b1fUJP') {
+        console.log("❌ Ignoring event from unsupported user:", userId);
+        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported user' });
     }
 
     if (!phone || !message || !userId) {
