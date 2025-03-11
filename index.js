@@ -155,9 +155,8 @@ app.post('/bluebubbles/events', async (req, res) => {
 app.post('/ghl/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
-    const { data } = req.body;
-
-    const { phone, message, userId, conversationProviderId } = data;
+    // Directly destructure the fields from req.body
+    const { phone, message, userId, conversationProviderId } = req.body;
 
     // ✅ Filter events by conversation provider ID, userId, and phone
     if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
@@ -171,7 +170,7 @@ app.post('/ghl/webhook', async (req, res) => {
     }
 
     if (!phone || !message || !userId) {
-        console.error("❌ Missing required fields in Go High-Level event:", data);
+        console.error("❌ Missing required fields in Go High-Level event:", req.body);
         if (!phone) console.error("❌ Missing field: phone");
         if (!message) console.error("❌ Missing field: message");
         if (!userId) console.error("❌ Missing field: userId");
@@ -196,7 +195,7 @@ app.post('/ghl/webhook', async (req, res) => {
         );
 
         if (!chat) {
-            console.error("❌ No matching chat found in BlueBubbles for:", userId);
+            console.error("❌ No matching chat found in BlueBubbles for:", phone);
             return res.status(404).json({ error: "No matching chat found" });
         }
 
