@@ -166,20 +166,20 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { conversationId, message, sent_by, conversationProviderId } = data;
+    const { conversationId, message, userid, conversationProviderId } = data;
 
-    // ✅ Filter events by conversation provider ID
-    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
-        console.log("❌ Ignoring event from unsupported conversation provider:", conversationProviderId);
-        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
+    // ✅ Filter events by conversation provider ID and userid
+    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70' || userid !== '36E2xrEV92vFl7b1fUJP') {
+        console.log("❌ Ignoring event from unsupported conversation provider or user:", conversationProviderId, userid);
+        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider or user' });
     }
 
-    if (!conversationId || !message || !sent_by) {
+    if (!conversationId || !message || !userid) {
         console.error("❌ Missing required fields in Go High-Level event:", data);
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    console.log(`🔍 New message from ${sent_by}: ${message}`);
+    console.log(`🔍 New message from ${userid}: ${message}`);
 
     try {
         // ✅ Find the corresponding chat in BlueBubbles
@@ -193,11 +193,11 @@ app.post('/ghl/webhook', async (req, res) => {
         );
 
         const chat = blueBubblesChats.data.find(chat => 
-            chat.participants.length === 1 && chat.participants[0].address === sent_by
+            chat.participants.length === 1 && chat.participants[0].address === userid
         );
 
         if (!chat) {
-            console.error("❌ No matching chat found in BlueBubbles for:", sent_by);
+            console.error("❌ No matching chat found in BlueBubbles for:", userid);
             return res.status(404).json({ error: "No matching chat found" });
         }
 
