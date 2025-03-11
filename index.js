@@ -190,7 +190,7 @@ app.post('/ghl/webhook', async (req, res) => {
                 with: ["lastMessage", "sms", "archived"],
                 sort: "lastmessage",
                 where: {
-                    chatIdentifer: phone
+                    chatIdentifier: phone
                 }
             },
             {
