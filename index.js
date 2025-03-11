@@ -187,12 +187,11 @@ app.post('/ghl/webhook', async (req, res) => {
             {
                 limit: 1000,
                 offset: 0,
-                with: ["lastMessage", "sms", "archived"],
-                sort: ["participants"],
+                with: ["participants"],
                 where: [
                     {
-                        statement: "chat.participants $elemMatch :phone",
-                        args: { phone: phoneNumber }
+                        statement: "chat.participants.address = :phone",
+                        args: { phone: phone }
                     }
                 ]
             },
