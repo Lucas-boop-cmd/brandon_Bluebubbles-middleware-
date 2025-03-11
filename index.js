@@ -188,6 +188,12 @@ app.post('/ghl/webhook', async (req, res) => {
 
         console.log(`🔍 BlueBubbles response:`, blueBubblesHandle.data);
 
+         // Check if the response contains the expected 'chats' property
+         if (!blueBubblesHandle.data.chats) {
+            console.error("❌ 'chats' property is missing in BlueBubbles response:", blueBubblesHandle.data);
+            return res.status(500).json({ error: "'chats' property is missing in BlueBubbles response" });
+        }
+
         const chat = blueBubblesHandle.data.chats.find(chat => 
             chat.participants.length === 1 && chat.participants[0].address === phone
         );
