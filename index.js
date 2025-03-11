@@ -180,33 +180,15 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
-        // ✅ Find the corresponding chat in BlueBubbles using chatIdentifier
-        console.log(`🔍 Querying BlueBubbles for chat with phone: ${phone}`);
-        const blueBubblesChats = await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
-            {
-                limit: 1000,
-                offset: 0,
-                with: ["lastMessage", "sms", "archived"],
-                sort: "lastmessage"
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
+        // ✅ Find the corresponding chat in BlueBubbles using handle address
+        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
+        const blueBubblesHandle = await axios.get(
+            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
         );
 
-        console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
+        console.log(`🔍 BlueBubbles response:`, blueBubblesHandle.data);
 
-         // Check if the response is an array
-         if (!Array.isArray(blueBubblesChats.data)) {
-            console.error("❌ Unexpected response format from BlueBubbles API:", blueBubblesChats.data);
-            return res.status(500).json({ error: "Unexpected response format from BlueBubbles API" });
-        }
-        
-        // Filter chats to find the one with a single participant matching the phone number
-        const chat = blueBubblesChats.data.find(chat => 
+        const chat = blueBubblesHandle.data.chats.find(chat => 
             chat.participants.length === 1 && chat.participants[0].address === phone
         );
 
@@ -216,7 +198,7 @@ app.post('/ghl/webhook', async (req, res) => {
         }
 
         console.log(`✅ Found Chat GUID: ${chat.guid} for ${phone}`);
-        
+
         // ✅ Send the message to BlueBubbles
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid}`);
         await axios.post(
