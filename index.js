@@ -97,7 +97,7 @@ app.post('/bluebubbles/events', async (req, res) => {
     try {
         // ✅ Find the corresponding conversation in Go High-Level
         const ghlConversation = await axios.get(
-            `https://services.leadconnectorhq.com/conversations?phone_number=${address}`,
+            `https://services.leadconnectorhq.com/conversations?phone=${address}`,
             {
                 headers: {
                     "Authorization": `Bearer ${ACCESS_TOKEN}`,
@@ -114,7 +114,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
             const newConversation = await axios.post(
                 'https://services.leadconnectorhq.com/conversations',
-                { phone_number: address },
+                { phone: address },
                 {
                     headers: {
                         "Authorization": `Bearer ${ACCESS_TOKEN}`,
@@ -166,7 +166,13 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { conversationId, message, sent_by } = data;
+    const { conversationId, message, sent_by, conversationProviderId } = data;
+
+    // ✅ Filter events by conversation provider ID
+    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
+        console.log("❌ Ignoring event from unsupported conversation provider:", conversationProviderId);
+        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
+    }
 
     if (!conversationId || !message || !sent_by) {
         console.error("❌ Missing required fields in Go High-Level event:", data);
