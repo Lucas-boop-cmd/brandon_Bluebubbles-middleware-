@@ -181,9 +181,12 @@ app.post('/ghl/webhook', async (req, res) => {
 
     try {
         // ✅ Find the corresponding chat in BlueBubbles using chatIdentifier
+        console.log(`🔍 Querying BlueBubbles for chat with phone: ${phone}`);
         const blueBubblesChats = await axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`
         );
+
+        console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
 
         const chat = blueBubblesChats.data.find(chat => 
             chat.chatIdentifier === phone
@@ -195,6 +198,7 @@ app.post('/ghl/webhook', async (req, res) => {
         }
 
         // ✅ Send the message to BlueBubbles
+        console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid}`);
         await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
