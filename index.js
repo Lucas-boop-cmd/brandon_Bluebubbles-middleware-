@@ -190,7 +190,7 @@ app.post('/ghl/webhook', async (req, res) => {
                 with: ["participants"],
                 where: [
                     {
-                        statement: "chat.participants.address = :phone",
+                        statement: ":phone IN chat.participants.address",
                         args: { phone: phone }
                     },
                     {
