@@ -190,8 +190,11 @@ app.post('/ghl/webhook', async (req, res) => {
                 with: ["participants"],
                 where: [
                     {
-                        statement: "chat.participants.address = :phone",
+                        statement: "chat.participants LIKE :phone",
                         args: { phone: phone }
+                    },
+                    {
+                        statement: "chat.participants_count = 1"
                     }
                 ]
             },
