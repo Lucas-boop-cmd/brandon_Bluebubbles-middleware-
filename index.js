@@ -157,7 +157,7 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
     // Directly destructure the fields from req.body
-    const { phone, message, userId, conversationProviderId } = req.body;
+    const { phone, message, userId, conversationProviderId, messageId } = req.body;
 
     // ✅ Filter events by conversation provider ID, userId, and phone
     if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
@@ -170,11 +170,12 @@ app.post('/ghl/webhook', async (req, res) => {
         return res.status(200).json({ status: 'ignored', message: 'Event from unsupported user' });
     }
 
-    if (!phone || !message || !userId) {
+    if (!phone || !message || !userId || !messageId) {
         console.error("❌ Missing required fields in Go High-Level event:", req.body);
         if (!phone) console.error("❌ Missing field: phone");
         if (!message) console.error("❌ Missing field: message");
         if (!userId) console.error("❌ Missing field: userId");
+        if (!messageId) console.error("❌ Missing field: messageId");
         return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -220,21 +221,21 @@ app.post('/ghl/webhook', async (req, res) => {
 
         console.log("✅ Message successfully forwarded to BlueBubbles!");
 
-         // ✅ Update the message status in Go High-Level
-         console.log(`🔍 Updating message status in Go High-Level for messageId: ${messageId}`);
-         await axios.put(
-             `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
-             {
-                 status: 'dilivered'
-             },
-             {
-                 headers: {
-                     "Authorization": `Bearer ${ACCESS_TOKEN}`,
-                     "Content-Type": "application/json",
-                     "Version": "2021-04-15"
-                 }
-             }
-         );
+        // ✅ Update the message status in Go High-Level
+        console.log(`🔍 Updating message status in Go High-Level for messageId: ${messageId}`);
+        await axios.put(
+            `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+            {
+                status: 'delivered'
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                    "Content-Type": "application/json",
+                    "Version": "2021-04-15"
+                }
+            }
+        );
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
 
