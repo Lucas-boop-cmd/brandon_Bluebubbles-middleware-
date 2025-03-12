@@ -23,53 +23,6 @@ console.log("GHL_REFRESH_TOKEN:", REFRESH_TOKEN ? "✅ Loaded" : "❌ Not Found"
 console.log("GHL_ACCESS_TOKEN:", ACCESS_TOKEN ? "✅ Loaded" : "❌ Not Found");
 console.log("BLUEBUBBLES_API_URL:", BLUEBUBBLES_API_URL ? "✅ Loaded" : "❌ Not Found");
 
-// ✅ Function to Refresh Access Token
-async function refreshAccessToken() {
-    try {
-        console.log("🔄 Refreshing Access Token...");
-
-        const requestBody = new URLSearchParams();
-        requestBody.append("grant_type", "refresh_token");
-        requestBody.append("client_id", CLIENT_ID);
-        requestBody.append("client_secret", CLIENT_SECRET);
-        requestBody.append("refresh_token", REFRESH_TOKEN);
-        requestBody.append("user_type", "Company");
-
-        const response = await axios.post(
-            'https://services.leadconnectorhq.com/oauth/token',
-            requestBody.toString(),
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Version": "2021-04-15"
-                }
-            }
-        );
-
-        ACCESS_TOKEN = response.data.access_token;
-        REFRESH_TOKEN = response.data.refresh_token;
-
-        // ✅ Update environment variables
-        process.env.GHL_ACCESS_TOKEN = ACCESS_TOKEN;
-        process.env.GHL_REFRESH_TOKEN = REFRESH_TOKEN;
-
-        console.log("✅ New Access Token:", ACCESS_TOKEN);
-        console.log("🔄 Updated Refresh Token:", REFRESH_TOKEN);
-        console.log(`⏳ Next refresh scheduled in 20 hours.`);
-
-    } catch (error) {
-        console.error("❌ Failed to refresh access token:", error.response ? error.response.data : error.message);
-    }
-}
-
-// ✅ Schedule the first token refresh 1 hour after deployment
-setTimeout(() => {
-    refreshAccessToken(); 
-    setInterval(refreshAccessToken, 20 * 60 * 60 * 1000);
-}, 60 * 60 * 1000);
-
-console.log("⏳ First token refresh scheduled for 1 hour from now...");
-
 // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
