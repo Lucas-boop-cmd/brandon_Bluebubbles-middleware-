@@ -188,7 +188,7 @@ app.post('/ghl/webhook', async (req, res) => {
 
         console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
 
-        const service = handleResponse.data.service;
+        const service = handleResponse.data.data.service;
 
         if (!service) {
             console.log(`❌ No service found for phone number: ${phone}`);
