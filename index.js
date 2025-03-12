@@ -190,7 +190,7 @@ app.post('/ghl/webhook', async (req, res) => {
                 with: ["participants"],
                 where: [
                     {
-                        statement: "chat.participants = :phone",
+                        statement: "ChatIdentifier = :phone",
                         args: { phone: phone }
                     },
                     {
@@ -213,13 +213,8 @@ app.post('/ghl/webhook', async (req, res) => {
             return res.status(500).json({ error: "Unexpected response format from BlueBubbles API" });
         }
 
-        // Log all chat identifiers and participants for debugging
-        blueBubblesChats.data.data.forEach(chat => {
-            console.log(`🔍 Chat Identifier: ${chat.participants}, Participants: ${chat.participants.map(p => p.address).join(', ')}`);
-        });
-
         const chat = blueBubblesChats.data.data.find(chat => 
-            chat.participants.some(participant => participant.address === phone)
+            chat.chatIdentifier === phone
         );
 
         if (!chat) {
