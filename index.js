@@ -185,12 +185,12 @@ app.post('/ghl/webhook', async (req, res) => {
         const blueBubblesChats = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
-                limit: 1000,
+                limit: 1,
                 offset: 0,
                 with: ["participants"],
                 where: [
                     {
-                        statement: "chat.participants LIKE :phone",
+                        statement: "chat.participants = :phone",
                         args: { phone: phone }
                     },
                     {
@@ -230,12 +230,15 @@ app.post('/ghl/webhook', async (req, res) => {
         console.log(`✅ Found Chat GUID: ${chat.guid} for ${phone}`);
         
         // ✅ Send the message to BlueBubbles
-        console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid}`);
+        const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+        console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid} and tempGuid: ${tempGuid}`);
         await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
                 chatGuid: chat.guid,
-                message: message
+                tempGuid: tempGuid,
+                message: message,
+                method: "apple-script"
             },
             {
                 headers: {
