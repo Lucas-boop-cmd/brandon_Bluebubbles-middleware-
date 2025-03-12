@@ -178,7 +178,15 @@ app.post('/ghl/webhook', async (req, res) => {
         await axios.put(
             `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
             {
-                status: 'delivered'
+                status: 'delivered',
+                error: {
+                    code: "1",
+                    type: "company",
+                    message: "There was an error from the provider"
+                },
+                recipients: [
+                    "string"
+                ]
             },
             {
                 headers: {
