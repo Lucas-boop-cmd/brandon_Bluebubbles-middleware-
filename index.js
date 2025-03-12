@@ -74,7 +74,8 @@ console.log("⏳ First token refresh scheduled for 1 hour from now...");
 app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
 
-    const { type, data } = req.body;
+     // Directly destructure the fields from req.body
+     const { phone, message, userId, conversationProviderId, messageId } = req.body;
 
     // ✅ Ensure we process only "new-message" events
     if (type !== "new-message" || !data) {
