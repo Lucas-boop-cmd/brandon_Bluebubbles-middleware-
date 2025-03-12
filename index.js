@@ -180,62 +180,32 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
-        // ✅ Find the corresponding chat in BlueBubbles using participants
-        console.log(`🔍 Querying BlueBubbles for chat with phone: ${phone}`);
-        const blueBubblesChats = await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/chat/query?password=${BLUEBUBBLES_PASSWORD}`,
-            {
-                limit: 10,
-                offset: 0,
-                with: ["participants"],
-                where: [
-                    {
-                        statement: ":phone IN chat.participants.address",
-                        args: { phone: phone }
-                    },
-                    {
-                        statement: "chat.participants_count = 1"
-                    }
-                ]
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
+        // ✅ Query for the handle to get the service
+        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
+        const handleResponse = await axios.get(
+            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
         );
 
-        console.log(`🔍 BlueBubbles response:`, blueBubblesChats.data);
+        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
 
-        // Check if the response contains the expected data array
-        if (!Array.isArray(blueBubblesChats.data.data)) {
-            console.error("❌ Unexpected response format from BlueBubbles API:", blueBubblesChats.data);
-            return res.status(500).json({ error: "Unexpected response format from BlueBubbles API" });
+        const service = handleResponse.data.service;
+
+        if (!service) {
+            console.log(`❌ No service found for phone number: ${phone}`);
+            return res.status(404).json({ error: "No service found for handle" });
         }
 
-        // Log all chat identifiers and participants for debugging
-        blueBubblesChats.data.data.forEach(chat => {
-            console.log(`🔍 Chat Identifier: ${chat.participants}, Participants: ${chat.participants.map(p => p.address).join(', ')}`);
-        });
+        // Manually construct the chat GUID
+        const chatGuid = `${service};-;${phone}`;
+        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
-        const chat = blueBubblesChats.data.data.find(chat => 
-            chat.participants.length === 1 && chat.participants[0].address === phone
-        );
-
-        if (!chat) {
-            console.log(`❌ No chat found for phone number: ${phone}`);
-            return res.status(404).json({ error: "No matching chat found" });
-        }
-
-        console.log(`✅ Found Chat GUID: ${chat.guid} for ${phone}`);
-        
         // ✅ Send the message to BlueBubbles
         const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-        console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chat.guid} and tempGuid: ${tempGuid}`);
+        console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chatGuid} and tempGuid: ${tempGuid}`);
         await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
-                chatGuid: chat.guid,
+                chatGuid: chatGuid,
                 tempGuid: tempGuid,
                 message: message,
                 method: "apple-script"
@@ -253,8 +223,8 @@ app.post('/ghl/webhook', async (req, res) => {
 
     } catch (error) {
         if (error.response && error.response.status === 404) {
-            console.error("❌ No matching chat found in BlueBubbles for:", phone);
-            res.status(404).json({ error: "No matching chat found" });
+            console.error("❌ No service found for handle in BlueBubbles for:", phone);
+            res.status(404).json({ error: "No service found for handle" });
         } else {
             console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
             res.status(500).json({ error: "Internal server error" });
