@@ -236,16 +236,13 @@ app.post('/ghl/webhook', async (req, res) => {
             }
         );
 
-        res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles' });
+        console.log("✅ Message status updated in Go High-Level!");
+
+        res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
     } catch (error) {
-        if (error.response && error.response.status === 404) {
-            console.error("❌ No service found for handle in BlueBubbles for:", phone);
-            res.status(404).json({ error: "No service found for handle" });
-        } else {
-            console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
-            res.status(500).json({ error: "Internal server error" });
-        }
+        console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
