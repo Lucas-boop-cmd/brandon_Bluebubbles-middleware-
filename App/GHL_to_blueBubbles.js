@@ -1,5 +1,5 @@
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles
-app.post('/ghl/webhook', async (req, res) => {
+app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
     // Directly destructure the fields from req.body
@@ -7,7 +7,6 @@ app.post('/ghl/webhook', async (req, res) => {
 
     // ✅ Filter events by conversation provider ID, userId, and phone
     if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
-        console.log("❌ Ignoring event from unsupported conversation provider:", conversationProviderId);
         return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
     }
 
@@ -24,7 +23,7 @@ app.post('/ghl/webhook', async (req, res) => {
         if (!messageId) console.error("❌ Missing field: messageId");
         return res.status(400).json({ error: "Missing required fields" });
     }
-
+    
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
@@ -67,7 +66,36 @@ app.post('/ghl/webhook', async (req, res) => {
 
         console.log("✅ Message successfully forwarded to BlueBubbles!");
 
-        console.log("✅ Message status updated in Go High-Level!");
+        // ✅ Update the status of the message in Go High-Level
+        try {
+            const ghlResponse = await axios.put(
+                `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+                {
+                    status: "delivered",
+                    error: {
+                        code: "1",
+                        type: "saas",
+                        message: "There was an error from the provider"
+                    },
+                },
+                {
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+                        "Content-Type": "application/json",
+                        "Version": "2021-04-15"
+                    }
+                }
+            );
+
+            if (ghlResponse.status === 200) {
+                console.log("✅ Message status updated in Go High-Level!");
+            } else {
+                console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
+            }
+        } catch (error) {
+            console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
+        }
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
