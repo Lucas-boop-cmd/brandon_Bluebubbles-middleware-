@@ -139,7 +139,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     const { phone, message, userId, conversationProviderId, messageId } = req.body;
 
     // ✅ Filter events by conversation provider ID, userId, and phone
-    if (conversationProviderId !== '67ceef6be35e2b2085ef1c70') {
+    if (conversationProviderId !== '67d49af815d7f0f0116431cd') {
         return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
     }
 
@@ -234,6 +234,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
 
     } catch (error) {
         console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
+        if (error.response) {
+            console.error("❌ BlueBubbles API error response:", error.response.data);
+        }
         res.status(500).json({ error: "Internal server error" });
     }
 });
