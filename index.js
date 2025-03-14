@@ -173,6 +173,28 @@ app.post('/ghl/webhook', async (req, res) => {
 
         console.log("✅ Message successfully forwarded to BlueBubbles!");
 
+        // ✅ Update the message status in Go High-Level
+        console.log(`🔍 Updating message status in Go High-Level for messageId: ${messageId}`);
+        try {
+            const updateResponse = await axios.put(
+                `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+                {
+                    status: 'delivered'
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                        "Content-Type": "application/json",
+                        "Version": "2021-04-15"
+                    }
+                }
+            );
+
+            console.log("✅ Message status successfully updated in Go High-Level!", updateResponse.data);
+        } catch (updateError) {
+            console.error("❌ Error updating message status in Go High-Level:", updateError.response ? updateError.response.data : updateError.message);
+        }
+
         console.log("✅ Message status updated in Go High-Level!");
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
