@@ -1,3 +1,9 @@
+const express = require('express');
+const axios = require('axios');
+const app = express();
+
+app.use(express.json());
+
 // Local variables for environment variables
 const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
 const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
@@ -70,7 +76,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             `https://services.leadconnectorhq.com/conversations?phone=${address}`,
             {
                 headers: {
-                    "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
                     "Version": "2021-04-15"
                 }
             }
@@ -87,7 +93,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                 { phone: address },
                 {
                     headers: {
-                        "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
                         "Content-Type": "application/json",
                         "Version": "2021-04-15"
                     }
@@ -107,7 +113,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             },
             {
                 headers: {
-                    "Authorization": `Bearer ${ACCESS_TOKEN}`,
+                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
                     "Content-Type": "application/json",
                     "Version": "2021-04-15"
                 }
@@ -208,7 +214,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                 {
                     headers: {
                         "Accept": "application/json",
-                        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
                         "Content-Type": "application/json",
                         "Version": "2021-04-15"
                     }
@@ -230,4 +236,10 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Internal server error" });
     }
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
