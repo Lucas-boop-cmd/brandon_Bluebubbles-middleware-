@@ -25,8 +25,9 @@ async function refreshGHLToken() {
                 grant_type: 'refresh_token',
                 refresh_token: GHL_REFRESH_TOKEN
             },
-            {
-                headers: {
+            
+                {
+                    headers: {
                     'Content-Type': 'application/json'
                 }
             }
@@ -68,7 +69,7 @@ app.post('/bluebubbles/events', async (req, res) => {
     if (!guid || !text || !address) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
-        if (!text) console.error("❌ Missing field: text");
+        if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
         return res.status(400).json({ error: "Missing required fields" });
     }
@@ -117,23 +118,26 @@ app.post('/bluebubbles/events', async (req, res) => {
         }
 
         // ✅ Send the message to Go High-Level
-        await axios.post(
-            `https://services.leadconnectorhq.com/conversations/messages/${isFromMe ? "outbound" : "inbound"}`,
-            {
-                type: "SMS",
-                conversationId: conversationId,
-                conversationProviderId: '67d49af815d7f0f0116431cd',
-                message: text,
-                sent_by: isFromMe ? "Me (Sent from iMessage)" : address
-            },
-            {
-                headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Content-Type": "application/json",
-                    "Version": "2021-04-15"
+        try {
+            await axios.post(
+                `https://services.leadconnectorhq.com/conversations/messages/${isFromMe ? "outbound" : "inbound"}`,
+                {
+                    'type': 'SMS', 
+                    'conversationProviderId': '67d49af815d7f0f0116431cd',
+                    'message': text,
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Content-Type": "application/json",
+                        "Version": "2021-04-15"
+                    }
                 }
-            }
-        );
+            );
+        } catch (error) {
+            console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
