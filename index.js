@@ -51,6 +51,9 @@ async function checkTokenExpiration(req, res, next) {
     next();
 }                 
 
+// Store to keep track of the last processed GUID for each chat
+const lastProcessedGuids = new Map();
+
  // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
@@ -72,6 +75,12 @@ app.post('/bluebubbles/events', async (req, res) => {
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
         return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // ✅ Block duplicate messages based on the last GUID from the chat
+    if (lastProcessedGuids.get(address) === guid) {
+        console.log("❌ Duplicate message detected, ignoring...");
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate message' });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
@@ -140,6 +149,9 @@ app.post('/bluebubbles/events', async (req, res) => {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
             return res.status(500).json({ error: "Internal server error" });
         }
+
+        // ✅ Mark the message as processed
+        lastProcessedGuids.set(address, guid);
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
