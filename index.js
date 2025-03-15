@@ -7,10 +7,11 @@ app.use(express.json());
 // Local variables for environment variables
 const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
 const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
-let GHL_ACCESS_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoQ2xhc3MiOiJMb2NhdGlvbiIsImF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJzb3VyY2UiOiJJTlRFR1JBVElPTiIsInNvdXJjZUlkIjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIiwiY2hhbm5lbCI6Ik9BVVRIIiwicHJpbWFyeUF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJvYXV0aE1ldGEiOnsic2NvcGVzIjpbImNvbnZlcnNhdGlvbnMucmVhZG9ubHkiLCJjb252ZXJzYXRpb25zLndyaXRlIiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLnJlYWRvbmx5IiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLndyaXRlIiwiY29udmVyc2F0aW9ucy9yZXBvcnRzLnJlYWRvbmx5IiwiY29udGFjdHMucmVhZG9ubHkiLCJjb250YWN0cy53cml0ZSIsInVzZXJzLnJlYWRvbmx5IiwidXNlcnMud3JpdGUiLCJ3b3JrZmxvd3MucmVhZG9ubHkiXSwiY2xpZW50IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5IiwiY2xpZW50S2V5IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIn0sImlhdCI6MTc0MTk4NzIzMS4yNDksImV4cCI6MTc0MjA3MzYzMS4yNDl9.cCRn-8sj2pmT1jYyNZDjWFXbaYe4aZVeODSyJ86RdCu9R2ONSYcdbjBm6PALppxuOAWnDfvjzbc8UJh9Yxsut-w81PD8AGSjw9pLCGiRdX02FUZJvdrxoKBDPnhGvNd4L47FT45Urx5S3KGgImBb_RJKCIWnD5lqcbHfz7YJirgAxv8Vv1f7iL9THGMjRSTa4exLdTmYhRysFg0z50ONgT1ORKOsMMk4x9gtdlLexk4jFSgGQehvEvMDuOOBUfsaOPpoV3EKhNZWzUmileu5eZgSwWMee4iAyIwfQZpfJ8CdT8syyOXuQHuAlYf2WwCFQOCaAJX-rRHY4eKWEDr--SqTPwensizFj7JtwxyrANJchMq3jlfHP40mOxrkHYSgA9IxUxEqU0pq96uc12oGb9SioDSboAHcqOJ4M1wPJas6XhfG1DL9bNyCMH1D049Lm5Odv-5Nr7toCVtkaCXJ3oz-Khkc4IRkoKDEyteHxfFQmn9MXZjq2_4_H8Cqeq8voq-eskhs1LO1gzeg-IhBW0rg5nLSfX25oTGDjFlIR7ZTV9OUaPYQRa2TC6-dCO8RH5738kH4kQm_28A7W1BaugTqnbRYMZeWzx74pOfFl7vD-w-2qkQCI_PktkonnvkrdQHv4zuaBbhZIPMRkrH5WgWtYXismanCNnsNidmVG6Q';
-let GHL_REFRESH_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoQ2xhc3MiOiJMb2NhdGlvbiIsImF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJzb3VyY2UiOiJJTlRFR1JBVElPTiIsInNvdXJjZUlkIjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIiwiY2hhbm5lbCI6Ik9BVVRIIiwicHJpbWFyeUF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJvYXV0aE1ldGEiOnsic2NvcGVzIjpbImNvbnZlcnNhdGlvbnMucmVhZG9ubHkiLCJjb252ZXJzYXRpb25zLndyaXRlIiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLnJlYWRvbmx5IiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLndyaXRlIiwiY29udmVyc2F0aW9ucy9yZXBvcnRzLnJlYWRvbmx5IiwiY29udGFjdHMucmVhZG9ubHkiLCJjb250YWN0cy53cml0ZSIsInVzZXJzLnJlYWRvbmx5IiwidXNlcnMud3JpdGUiLCJ3b3JrZmxvd3MucmVhZG9ubHkiXSwiY2xpZW50IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5IiwiY2xpZW50S2V5IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIn0sImlhdCI6MTc0MTk4NzIzMS4yNTYsImV4cCI6MTc3MzUyMzIzMS4yNTYsInVuaXF1ZUlkIjoiNjFiNTUzZDMtNzcxNi00OTQwLThmNTItNjc1NDQ3OTg4MWRlIn0.VFHVKi6yagIf2WNf2sPaw_Is1WsvwWgenLJGuUhJmB-SF3O1VMC8YJq1vGQ0uKrNkV6pxJSFXc8iyQKr9ibbEX4hJS3aiPlR1OxAc8hsdceFxbj3Q4Ae6YI4b7XFYjhGZ6Jl3__zHxqzSBBq3CtC3Psm6QSrws5HAt0hDOXka7mdPJyFKhLSsNG4oIDlSFarhOylzJ66M7TiyFQz0NG8xbyXWezVv9o5B2GXg5kvFawNpQz0EfJnOeSVpBarsB-ovez0EOFt6je2vkUsCmB5OzxNoeg80mp7ynJ_P3QGlxkK9Q5NGyWENEhKJNNd_ruBzhFx_ydE40Q-oS-H_OMvcYKXgGP6CdaB23Q3OPQHfx9Jv9yfqrT2kGbOFns4o-5wECBvTR3t_FDdBVSAMtKHff3XHe4ADkXqcsbhEWq76EjWWkMCMlXPPnMe8WYJRtYvv3j6sUutZjQvYe21RC6XD1qVhLYKXXbIqcJmFILRJLPlVwGfEZlyPV3Ub65Fhu7v53ZYl1eX5i3Rrz38_zv-jidwPh6T8hBHp7UOyptSqC0CFDbg2i3XpaXQRNmzCTYfLAeEimJR3k88-m34WeEPwazAAL3MAT-BDTVw5NYyJMSu7YLabHV6P8iNAW9faqRjfikhP2wm3-Aqx1CWbD6FaefesstaxILnD8GVYCPu58A';
+let GHL_ACCESS_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoQ2xhc3MiOiJMb2NhdGlvbiIsImF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJzb3VyY2UiOiJJTlRFR1JBVElPTiIsInNvdXJjZUlkIjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIiwiY2hhbm5lbCI6Ik9BVVRIIiwicHJpbWFyeUF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJvYXV0aE1ldGEiOnsic2NvcGVzIjpbImNvbnZlcnNhdGlvbnMucmVhZG9ubHkiLCJjb252ZXJzYXRpb25zLndyaXRlIiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLnJlYWRvbmx5IiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLndyaXRlIiwiY29udmVyc2F0aW9ucy9yZXBvcnRzLnJlYWRvbmx5IiwiY29udGFjdHMucmVhZG9ubHkiLCJjb250YWN0cy53cml0ZSIsInVzZXJzLnJlYWRvbmx5IiwidXNlcnMud3JpdGUiLCJ3b3JrZmxvd3MucmVhZG9ubHkiXSwiY2xpZW50IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5IiwiY2xpZW50S2V5IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIn0sImlhdCI6MTc0MjA0NDc0OC44MzQsImV4cCI6MTc0MjEzMTE0OC44MzR9.PS2QReWH2cLou58ijWXepjLmNQZU-NAwRbFwmqoKDMbvN1b0iLbTvmAjPfXw5A6gfUzMqC9NjazKtggoJQZ8DMHjIvjKNFvFm7rWKLnAoothbqlQXva64OxVPf3PxZ6LR_ApF30D9RdRBhNv49ci0u72X5_PYLQQlSHsWRe_nzsOKZy7VKwS1a0dRVo0cQbrfTBZglL6CnaWYYIV9D8-7EsP3_u7Pe_aNFfxfSwtPNDTnymqtUBXkcYXvVl-VHazqkL-5UCyXK95dkmSjIL2hPcwc3KaAr4pSmL3q2SKnqllTnlbncezZrSPVGbzpFsHfhHMDq9mj8PTPAJoFhzJfLp109qaKnahRL_m9NTH9rqUGuOaajm9V597GDdcRlkn8-uSr8Q20JsteTNSmM8rVxJ0RBhXeCcKS4UrVODxnMrZKq9cljPK5iNlcM6LqWPN-KdHPvUJgah8TBnVDVUgxG2jEpHsntazY9rI0EuLP8weyKV9vSmpReBrFSbBB7BLS4Y2Z86ap0e4icCR7x2kS7UpdTOVwxAk79NEs6eoIDHisssJVemzU5KCTLdB9ExqRjGmv-KgU63y0V3U0VHx407lwILkA9Bxykfk7mEJMriHGNRks2nWVpjMX38Nrj4O5-Q8vvTWJUjRNKLB7FVfGIj7kj6k3QsbzNxjxoamDcg';
+let GHL_REFRESH_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoQ2xhc3MiOiJMb2NhdGlvbiIsImF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJzb3VyY2UiOiJJTlRFR1JBVElPTiIsInNvdXJjZUlkIjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIiwiY2hhbm5lbCI6Ik9BVVRIIiwicHJpbWFyeUF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJvYXV0aE1ldGEiOnsic2NvcGVzIjpbImNvbnZlcnNhdGlvbnMucmVhZG9ubHkiLCJjb252ZXJzYXRpb25zLndyaXRlIiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLnJlYWRvbmx5IiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLndyaXRlIiwiY29udmVyc2F0aW9ucy9yZXBvcnRzLnJlYWRvbmx5IiwiY29udGFjdHMucmVhZG9ubHkiLCJjb250YWN0cy53cml0ZSIsInVzZXJzLnJlYWRvbmx5IiwidXNlcnMud3JpdGUiLCJ3b3JrZmxvd3MucmVhZG9ubHkiXSwiY2xpZW50IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5IiwiY2xpZW50S2V5IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIn0sImlhdCI6MTc0MjA0NDc0OC44NDEsImV4cCI6MTc3MzU4MDc0OC44NDEsInVuaXF1ZUlkIjoiODU0MDI3YjEtYzhjZi00NWJjLWI2MGUtNDMyMTI4NTI3MWUwIn0.LxFxK2G_T8mw-zlpG5NPgWuSjzmA8Z7zIpmc2jE1MoVKfshonbGc6BjvmjqGWJxNURSJPs3RO6qNGVPXNlKnznU1WQZ6OYtSlub1rozDFwvLJQiAvtCtUuT2z-7Fo9doBLniLBoT-dVtJ-v5wZB6e8UPGM5x-96ba9Xk272nOH6QU7RfJnq6E89SlgQba_8gjkAZ13eykxx2XFleR63gFB6-23Rykc7PP31Wk__OW5LOhPKf46WO4F_eBOHBoaoPYkk7y1zG7GkZFX4nVMUDR8ge-hyj0rpFxTFE4qgzaKgiVXj8bB5TgevAe3mPUw7Wde1cX1BX4fwRHKer2YDyGYs_hd2Wet2cENrdvEnl-KEdz6oaToBgV69UDg9hEd6Ofx490dpsPTYa1jkxIX4fW_TcS92INeVPCvSfKJqW0XXmKzJRd9Ca05YUViDucKquc_2KFJD-WVnBUNiZPbYtV8KX1yKPd_y_Xn6u_zWr7nukcp3QU0Ab16q3nXoNhiDhoHj66jbWwtoeKJzmve4G4SnDC7f5Fv1fkReKjViuo_Q4mP2cKpoc9btFyQQHCUP0-0JpYoIm5PsQ-1bf2XulN-MLFbUDu0Onaf8Itw3oAtlye-c8FXD-GMEyNNMODsYPx834UTmOaf0Pqh3ZxQbt_F-iBRMHj8AGfmTkDRiwEbo';
 const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
 const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
+const LocationId = 'h4BWchNdy6Wykng1FfTH';
 let tokenExpiration = Date.now() + 22 * 60 * 60 * 1000; // 22 hours from now
 
 // Function to refresh GHL API token
@@ -61,7 +62,8 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { guid, text, address, isFromMe } = data;
+    const { guid, text, isFromMe, handle } = data;
+    const address = handle?.address;
 
     if (!guid || !text || !address) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
@@ -74,43 +76,53 @@ app.post('/bluebubbles/events', async (req, res) => {
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
 
     try {
-        // ✅ Find the corresponding conversation in Go High-Level
-        const ghlConversation = await axios.get(
-            `https://services.leadconnectorhq.com/conversations?phone=${address}`,
+        // ✅ Find the corresponding contact in Go High-Level
+        const ghlContact = await axios.get(
+            `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
             {
                 headers: {
                     "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Version": "2021-04-15"
+                    "Version": "2021-04-15",
+                    "Accept": "application/json"
                 }
             }
         );
 
-        let phone = ghlConversation.data?.conversations?.[0]?.id;
+        let contactId = ghlContact.data?.contacts?.[0]?.id;
 
-        // ✅ If conversation does not exist, create one
-        if (!phone) {
-            console.log("📌 No existing conversation found, creating a new one...");
+        // ✅ If contact does not exist, ignore
+        if (!contactId) {
+            console.log("❌ No existing contact found, ignoring message...");
+            return res.status(404).json({ error: "No existing contact found" });
+        }
 
-            const newConversation = await axios.post(
-                'https://services.leadconnectorhq.com/conversations',
-                { phone: address },
-                {
-                    headers: {
-                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Content-Type": "application/json",
-                        "Version": "2021-04-15"
-                    }
+        // ✅ Find the corresponding conversation in Go High-Level
+        const ghlConversation = await axios.get(
+            `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Version": "2021-04-15",
+                    "Accept": "application/json"
                 }
-            );
+            }
+        );
 
-            phone = newConversation.data.id;
+        let conversationId = ghlConversation.data?.conversations?.[0]?.id;
+
+        // ✅ If conversation does not exist, ignore
+        if (!conversationId) {
+            console.log("❌ No existing conversation found, ignoring message...");
+            return res.status(404).json({ error: "No existing conversation found" });
         }
 
         // ✅ Send the message to Go High-Level
         await axios.post(
             `https://services.leadconnectorhq.com/conversations/messages/${isFromMe ? "outbound" : "inbound"}`,
             {
-                phone: phone,
+                type: "SMS",
+                conversationId: conversationId,
+                conversationProviderId: '67d49af815d7f0f0116431cd',
                 message: text,
                 sent_by: isFromMe ? "Me (Sent from iMessage)" : address
             },
@@ -131,8 +143,6 @@ app.post('/bluebubbles/events', async (req, res) => {
         console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Internal server error" });
     }
-
-    
 });
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles
 app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
