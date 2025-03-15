@@ -65,6 +65,9 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     if (!guid || !text || !address) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
+        if (!guid) console.error("❌ Missing field: guid");
+        if (!text) console.error("❌ Missing field: text");
+        if (!address) console.error("❌ Missing field: address");
         return res.status(400).json({ error: "Missing required fields" });
     }
 
