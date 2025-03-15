@@ -83,18 +83,6 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Block duplicate messages based on the last GUID from the chat
-    if (lastProcessedGuids.get(address) === guid) {
-        console.log("❌ Duplicate message detected, ignoring...");
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate message' });
-    }
-
-    // ✅ Block forwarding if the last Go High-Level message is the same as the current text
-    if (lastMessageTexts.get(address) === text) {
-        console.log("❌ Duplicate message text detected, ignoring...");
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate message text' });
-    }
-
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
 
     try {
@@ -162,10 +150,6 @@ app.post('/bluebubbles/events', async (req, res) => {
             return res.status(500).json({ error: "Internal server error" });
         }
 
-        // ✅ Mark the message as processed
-        lastProcessedGuids.set(address, guid);
-        lastMessageTexts.set(address, text);
-
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
@@ -200,12 +184,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         if (!userId) console.error("❌ Missing field: userId");
         if (!messageId) console.error("❌ Missing field: messageId");
         return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    // ✅ Block duplicate messages based on the last messageId from the conversation
-    if (lastProcessedMessageIds.get(phone) === messageId) {
-        console.log("❌ Duplicate message detected, ignoring...");
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate message' });
     }
     
     console.log(`🔍 New message from ${userId}: ${message}`);
@@ -249,9 +227,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         );
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
-
-        // ✅ Mark the message as processed
-        lastProcessedMessageIds.set(phone, messageId);
 
         // ✅ Update the status of the message in Go High-Level
         try {
