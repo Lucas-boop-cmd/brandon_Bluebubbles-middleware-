@@ -124,6 +124,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                 {
                     'type': 'SMS', 
                     'conversationProviderId': '67d49af815d7f0f0116431cd',
+                    'conversationId': conversationId,
                     'message': text,
                 },
                 {
