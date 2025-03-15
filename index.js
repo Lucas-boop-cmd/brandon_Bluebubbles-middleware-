@@ -51,11 +51,14 @@ async function checkTokenExpiration(req, res, next) {
     next();
 }                 
 
-// Store to keep track of the last processed GUIDs for each chat
+// Store to keep track of the last processed GUID for each chat
 const lastProcessedGuids = new Map();
 
 // Store to keep track of the last processed messageId for each conversation
 const lastProcessedMessageIds = new Map();
+
+// Store to keep track of the last message text for each conversation
+const lastMessageTexts = new Map();
 
  // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
@@ -80,10 +83,16 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Block duplicate messages based on the last five GUIDs from the chat
-    if (lastProcessedGuids.has(address) && lastProcessedGuids.get(address).includes(guid)) {
+    // ✅ Block duplicate messages based on the last GUID from the chat
+    if (lastProcessedGuids.get(address) === guid) {
         console.log("❌ Duplicate message detected, ignoring...");
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message' });
+    }
+
+    // ✅ Block forwarding if the last Go High-Level message is the same as the current text
+    if (lastMessageTexts.get(address) === text) {
+        console.log("❌ Duplicate message text detected, ignoring...");
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate message text' });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
@@ -134,7 +143,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             await axios.post(
                 `https://services.leadconnectorhq.com/conversations/messages/inbound`,
                 {
-                    'type': 'Custom', 
+                    'type': 'SMS', 
                     'conversationProviderId': '67d49af815d7f0f0116431cd',
                     'conversationId': conversationId,
                     'message': text,
@@ -154,15 +163,8 @@ app.post('/bluebubbles/events', async (req, res) => {
         }
 
         // ✅ Mark the message as processed
-        if (!lastProcessedGuids.has(address)) {
-            lastProcessedGuids.set(address, []);
-        }
-        const guids = lastProcessedGuids.get(address);
-        guids.push(guid);
-        if (guids.length > 5) {
-            guids.shift();
-        }
-        lastProcessedGuids.set(address, guids);
+        lastProcessedGuids.set(address, guid);
+        lastMessageTexts.set(address, text);
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
