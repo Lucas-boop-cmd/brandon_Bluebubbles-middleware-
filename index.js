@@ -205,11 +205,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
                     status: "delivered",
-                    error: {
-                        code: "1",
-                        type: "saas",
-                        message: "There was an error from the provider"
-                    },
                 },
                 {
                     headers: {
@@ -222,7 +217,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             );
 
             if (ghlResponse.status === 200) {
-                console.log("✅ Message status updated in Go High-Level!");
+                console.log("✅ Message status updated in Go High-Level!", ghlResponse.data);
             } else {
                 console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
             }
