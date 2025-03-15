@@ -120,12 +120,13 @@ app.post('/bluebubbles/events', async (req, res) => {
         // ✅ Send the message to Go High-Level
         try {
             await axios.post(
-                `https://services.leadconnectorhq.com/conversations/messages/${isFromMe ? "outbound" : "inbound"}`,
+                `https://services.leadconnectorhq.com/conversations/messages/inbound`,
                 {
                     'type': 'SMS', 
                     'conversationProviderId': '67d49af815d7f0f0116431cd',
                     'conversationId': conversationId,
                     'message': text,
+                    'direction': isFromMe ? 'outbound' : 'inbound',
                 },
                 {
                     headers: {
