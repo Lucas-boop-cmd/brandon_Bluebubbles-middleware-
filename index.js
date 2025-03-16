@@ -181,7 +181,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                 const ghlResponse = await axios.put(
                     `https://services.leadconnectorhq.com/conversations/messages/${lastMessageId}/status`,
                     {
-                        status: "delivered",
+                        'status': "delivered",
                     },
                     {
                         headers: {
