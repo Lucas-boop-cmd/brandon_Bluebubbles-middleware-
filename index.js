@@ -181,7 +181,14 @@ app.post('/bluebubbles/events', async (req, res) => {
                 const ghlResponse = await axios.put(
                     `https://services.leadconnectorhq.com/conversations/messages/${lastMessageId}/status`,
                     {
-                        'status': "delivered",
+                        status: "delivered",
+                        error: {
+                            code: "1",
+                            type: "saas",
+                            message: "There was an error from the provider"
+                        },
+                        emailMessageId: "ve9EPM428h8vShlRW1KT",
+                        recipients: [{ address: address }]
                     },
                     {
                         headers: {
@@ -302,8 +309,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                         type: "saas",
                         message: "There was an error from the provider"
                     },
-                    emailMessageId: "ve9EPM428h8vShlRW1KT",
-                    recipients: ["string"]
+                    recipients: [{ address: phone }]
                 },
                 {
                     headers: {
