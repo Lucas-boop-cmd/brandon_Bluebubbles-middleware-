@@ -150,7 +150,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             await axios.post(
                 `https://services.leadconnectorhq.com/conversations/messages/inbound`,
                 {
-                    'type': 'SMS', 
+                    'type': 'Custom', 
                     'conversationProviderId': '67d49af815d7f0f0116431cd',
                     'conversationId': conversationId,
                     'message': text,
@@ -171,6 +171,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
         // ✅ Mark the message as processed
         lastTempGuids.set(address, tempGuid);
+        lastMessageTexts.set(address, text);
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
