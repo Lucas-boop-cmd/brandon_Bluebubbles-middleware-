@@ -160,6 +160,48 @@ app.post('/bluebubbles/events', async (req, res) => {
                     }
                 }
             );
+
+            // ✅ Get the last message ID from the conversation
+            const messagesResponse = await axios.get(
+                `https://services.leadconnectorhq.com/conversations/${conversationId}/messages`,
+                {
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Version": "2021-04-15"
+                    }
+                }
+            );
+
+            const lastMessageId = messagesResponse.data?.messages?.[0]?.id;
+            console.log(`✅ Last message ID from conversation: ${lastMessageId}`);
+
+            // ✅ Update the status of the message in Go High-Level
+            try {
+                const ghlResponse = await axios.put(
+                    `https://services.leadconnectorhq.com/conversations/messages/${lastMessageId}/status`,
+                    {
+                        status: "delivered",
+                    },
+                    {
+                        headers: {
+                            "Accept": "application/json",
+                            "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                            "Content-Type": "application/json",
+                            "Version": "2021-04-15"
+                        }
+                    }
+                );
+
+                if (ghlResponse.status === 200) {
+                    console.log("✅ Message status updated in Go High-Level!", ghlResponse.data);
+                } else {
+                    console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
+                }
+            } catch (error) {
+                console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
+            }
+
         } catch (error) {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
             return res.status(500).json({ error: "Internal server error" });
@@ -255,6 +297,13 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
                     status: "delivered",
+                    error: {
+                        code: "1",
+                        type: "saas",
+                        message: "There was an error from the provider"
+                    },
+                    emailMessageId: "ve9EPM428h8vShlRW1KT",
+                    recipients: ["string"]
                 },
                 {
                     headers: {
