@@ -60,9 +60,6 @@ const lastProcessedMessageIds = new Map();
 // Store to keep track of the last message text for each conversation
 const lastMessageTexts = new Map();
 
-// Store to keep track of the last tempGuid for each chat
-const lastTempGuids = new Map();
-
 // Store to keep track of the last message text and address from Go High-Level
 const lastGHLMessages = new Map();
 
@@ -78,22 +75,21 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { guid, text, isFromMe, handle, tempGuid } = data;
+    const { guid, text, isFromMe, handle } = data;
     const address = handle?.address;
 
-    if (!guid || !text || !address || !tempGuid) {
+    if (!guid || !text || !address ) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
-        if (!tempGuid) console.error("❌ Missing field: tempGuid");
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Block duplicate messages based on the last tempGuid from the chat
-    if (lastTempGuids.get(address) === tempGuid) {
-        console.log("❌ Duplicate tempGuid detected, ignoring...");
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate tempGuid' });
+    // ✅ Block duplicate messages based on the last Guid from the chat
+    if (lastProcessedGuids.get(address) === guid) {
+        console.log("❌ Duplicate GUID detected, ignoring...");
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
     }
 
     // ✅ Block messages if the address and text match the last GHL message
@@ -170,8 +166,7 @@ app.post('/bluebubbles/events', async (req, res) => {
         }
 
         // ✅ Mark the message as processed
-        lastTempGuids.set(address, tempGuid);
-        lastMessageTexts.set(address, text);
+        lastMessageTexts.set(text);
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
