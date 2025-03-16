@@ -72,7 +72,7 @@ app.post('/bluebubbles/events', async (req, res) => {
     // ✅ Ensure we process only "new-message" events
     if (type !== "new-message" || !data) {
         console.error("❌ Invalid or missing message data:", req.body);
-        return res.status(400).json({ error: "Invalid event type or missing data" });
+        return res.status(200).json({ status: 'ignored', message: 'Invalid event type or missing data' });
     }
 
     const { guid, text, isFromMe, handle } = data;
@@ -83,7 +83,7 @@ app.post('/bluebubbles/events', async (req, res) => {
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
-        return res.status(400).json({ error: "Missing required fields" });
+        return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
     // ✅ Block duplicate messages based on the last Guid from the chat
@@ -118,7 +118,7 @@ app.post('/bluebubbles/events', async (req, res) => {
         // ✅ If contact does not exist, ignore
         if (!contactId) {
             console.log("❌ No existing contact found, ignoring message...");
-            return res.status(404).json({ error: "No existing contact found" });
+            return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
         }
 
         // ✅ Find the corresponding conversation in Go High-Level
@@ -138,7 +138,7 @@ app.post('/bluebubbles/events', async (req, res) => {
         // ✅ If conversation does not exist, ignore
         if (!conversationId) {
             console.log("❌ No existing conversation found, ignoring message...");
-            return res.status(404).json({ error: "No existing conversation found" });
+            return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
         }
 
         // ✅ Send the message to Go High-Level
