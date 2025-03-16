@@ -304,12 +304,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
                     status: "delivered",
-                    error: {
-                        code: "1",
-                        type: "saas",
-                        message: "There was an error from the provider"
-                    },
-                    recipients: [{ address: phone }]
                 },
                 {
                     headers: {
