@@ -60,6 +60,12 @@ const lastProcessedMessageIds = new Map();
 // Store to keep track of the last message text for each conversation
 const lastMessageTexts = new Map();
 
+// Store to keep track of the last tempGuid for each chat
+const lastTempGuids = new Map();
+
+// Store to keep track of the last message text and address from Go High-Level
+const lastGHLMessages = new Map();
+
  // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
@@ -72,15 +78,28 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(400).json({ error: "Invalid event type or missing data" });
     }
 
-    const { guid, text, isFromMe, handle } = data;
+    const { guid, text, isFromMe, handle, tempGuid } = data;
     const address = handle?.address;
 
-    if (!guid || !text || !address) {
+    if (!guid || !text || !address || !tempGuid) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
+        if (!tempGuid) console.error("❌ Missing field: tempGuid");
         return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // ✅ Block duplicate messages based on the last tempGuid from the chat
+    if (lastTempGuids.get(address) === tempGuid) {
+        console.log("❌ Duplicate tempGuid detected, ignoring...");
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate tempGuid' });
+    }
+
+    // ✅ Block messages if the address and text match the last GHL message
+    if (lastGHLMessages.get(address) === text) {
+        console.log("❌ Duplicate message from GHL detected, ignoring...");
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
@@ -149,6 +168,9 @@ app.post('/bluebubbles/events', async (req, res) => {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
             return res.status(500).json({ error: "Internal server error" });
         }
+
+        // ✅ Mark the message as processed
+        lastTempGuids.set(address, tempGuid);
 
         console.log("✅ Message successfully forwarded to Go High-Level!");
 
@@ -227,6 +249,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         );
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
+
+        // ✅ Mark the message as processed
+        lastGHLMessages.set(phone, message);
 
         // ✅ Update the status of the message in Go High-Level
         try {
