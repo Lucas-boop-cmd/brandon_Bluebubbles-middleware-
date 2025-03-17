@@ -3,7 +3,6 @@ const axios = require('axios');
 const app = express();
 const { storeGUID, loadGUIDs } = require('./dataBase'); // Import database functions
 
-
 app.use(express.json());
 
 // Local variables for environment variables
@@ -71,16 +70,14 @@ app.post('/bluebubbles/events', async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
+    // ✅ Check if GUID already exists in the database
+    const existingGUIDs = loadGUIDs();
+    const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
+    if (isDuplicate) {
+        console.log('❌ Duplicate GUID detected, ignoring...');
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
+    }
 
-     // ✅ Check if GUID already exists in the database
-     const existingGUIDs = loadGUIDs();
-     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
-        if (isDuplicate) {
-            console.log('❌ Duplicate GUID detected, ignoring...');
-            return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-        }
-    
-    
     if (!guid || !text || !address || !originalROWID) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
@@ -94,20 +91,6 @@ app.post('/bluebubbles/events', async (req, res) => {
     if (lastGHLMessages.get(address) === text) {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
-    }
-
-        // Log the response data
-        console.log('🔍 BlueBubbles query response data:', queryResponse.data);
-
-        // Check if the message with the same GUID and originalROWID already exists
-        const duplicateMessage = queryResponse.data.data.find(message => message.originalROWID === originalROWID);
-        if (duplicateMessage) {
-            console.log('❌ Duplicate message detected in BlueBubbles, ignoring...');
-            return res.status(200).json({ status: 'ignored', message: 'Duplicate message in BlueBubbles' });
-        }
-    } catch (error) {
-        console.error("❌ Error querying BlueBubbles for messages:", error.response ? error.response.data : error.message);
-        return res.status(500).json({ error: "Internal server error" });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
