@@ -276,8 +276,8 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
 
-        // Store the last message text from Go High-Level
-        lastGHLMessages.set(phone, message);
+            // Store the last message text and messageId from Go High-Level
+        lastGHLMessages.set(phone, { text: message, messageId });
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
