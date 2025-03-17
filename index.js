@@ -88,6 +88,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     // Query BlueBubbles for messages based on GUID
     try {
+        console.log(`🔍 Querying BlueBubbles for messages with GUID: ${guid}`);
         const queryResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
@@ -97,7 +98,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                     {
                         statement: "message.guid = :guid",
                         args: {
-                            guid: data.guid
+                            guid: guid
                         }
                     }
                 ],
