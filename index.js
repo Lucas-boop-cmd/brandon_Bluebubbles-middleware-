@@ -80,7 +80,6 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
-   
     // Check if the last Go High-Level message equals the current BlueBubbles event text
     if (lastGHLMessages.get(address) === text) {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
@@ -111,7 +110,10 @@ app.post('/bluebubbles/events', async (req, res) => {
             }
         );
 
-        if (queryResponse.data.data.length > 0) {
+        // Filter out messages that have already been sent
+        const sentMessages = queryResponse.data.data.filter(message => message.isSent);
+
+        if (sentMessages.length > 0) {
             console.log('❌ Duplicate message detected in BlueBubbles, ignoring...');
             return res.status(200).json({ status: 'ignored', message: 'Duplicate message in BlueBubbles' });
         }
