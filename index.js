@@ -93,6 +93,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             {
                 limit: 100,
                 offset: 0,
+                with: [ chat.participants = address ],
                 where: [
                     {
                         statement: "message.guid = :guid",
@@ -110,10 +111,8 @@ app.post('/bluebubbles/events', async (req, res) => {
             }
         );
 
-        // Filter out messages that have already been sent
-        const sentMessages = queryResponse.data.data.filter(message => message.isSent);
-
-        if (sentMessages.length > 0) {
+        // Check if the message with the same GUID already exists
+        if (queryResponse.data.data.length > 0) {
             console.log('❌ Duplicate message detected in BlueBubbles, ignoring...');
             return res.status(200).json({ status: 'ignored', message: 'Duplicate message in BlueBubbles' });
         }
