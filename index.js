@@ -92,21 +92,13 @@ app.post('/bluebubbles/events', async (req, res) => {
         const queryResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
-                limit: 10,
+                limit: 100,
                 offset: 0,
-                chatGuid: "",
-                with: [
-                    "chat",
-                    "chat.participants",
-                    "attachment",
-                    "handle",
-                    "sms"
-                ],
                 where: [
                     {
                         statement: "message.guid = :guid",
                         args: {
-                            guid: guid
+                            guid: data.guid
                         }
                     }
                 ],
