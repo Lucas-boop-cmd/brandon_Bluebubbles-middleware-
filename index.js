@@ -15,6 +15,10 @@ redisClient.on('error', (err) => {
 redisClient.on('connect', () => {
     console.log('✅ Connected to Redis');
 });
+
+// Ensure Redis client is connected before using it
+redisClient.connect().catch(console.error);
+
 app.use(express.json());
 
 // Local variables for environment variables
