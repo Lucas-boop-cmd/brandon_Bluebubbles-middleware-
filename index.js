@@ -220,7 +220,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             );
 
             if (ghlResponse.status === 200) {
-                console.log("✅ Message status updated in Go High-Level!", ghlResponse.data);
+                console.log("✅ Message status updated in Go High-Level!", ghlResponse.data, messageId);
             } else {
                 console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
                 return res.status(500).json({ error: "Failed to update message status in GHL" });
