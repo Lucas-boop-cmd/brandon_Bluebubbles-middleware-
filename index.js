@@ -209,25 +209,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
-        // ✅ Query for the handle to get the service
-        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
-        const handleResponse = await axios.get(
-            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
-        );
-
-        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
-
-        const service = handleResponse.data.data.service;
-
-        if (!service) {
-            console.log(`❌ No service found for phone number: ${phone}`);
-            return res.status(404).json({ error: "No service found for handle" });
-        }
-
-        // Manually construct the chat GUID
-        const chatGuid = `${service};-;${phone}`;
-        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
-
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
         try {
             const ghlResponse = await axios.put(
@@ -256,6 +237,25 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             return res.status(500).json({ error: "Internal server error" });
         }
 
+        // ✅ Query for the handle to get the service
+        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
+        const handleResponse = await axios.get(
+            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
+        );
+
+        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
+
+        const service = handleResponse.data.data.service;
+
+        if (!service) {
+            console.log(`❌ No service found for phone number: ${phone}`);
+            return res.status(404).json({ error: "No service found for handle" });
+        }
+
+        // Manually construct the chat GUID
+        const chatGuid = `${service};-;${phone}`;
+        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
+
         // ✅ Send the message to BlueBubbles
         const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chatGuid} and tempGuid: ${tempGuid}`);
@@ -276,8 +276,8 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
 
-            // Store the last message text and messageId from Go High-Level
-        lastGHLMessages.set(phone, { text: message, messageId });
+        // Store the last message text and messageId from Go High-Level
+        lastGHLMessages.set(phone, { text: message });
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
