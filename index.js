@@ -1,23 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const redis = require('redis');
 const app = express();
-
-app.use(express.json());
-
-// Initialize Redis client
-const redisClient = redis.createClient();
-
-redisClient.on('error', (err) => {
-    console.error('❌ Redis error:', err);
-});
-
-redisClient.on('connect', () => {
-    console.log('✅ Connected to Redis');
-});
-
-// Ensure Redis client is connected before using it
-redisClient.connect().catch(console.error);
 
 app.use(express.json());
 
@@ -30,6 +13,19 @@ const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
 const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
 const LocationId = 'h4BWchNdy6Wykng1FfTH';
 let tokenExpiration = Date.now() + 22 * 60 * 60 * 1000; // 22 hours from now
+
+// Store to keep track of GUIDs in the past 24 hours
+const guids = new Set();
+
+// Function to store GUIDs and check for duplicates
+function storeAndCheckGuid(guid) {
+    if (guids.has(guid)) {
+        return true; // Duplicate found
+    }
+    guids.add(guid);
+    setTimeout(() => guids.delete(guid), 24 * 60 * 60 * 1000); // Remove GUID after 24 hours
+    return false; // No duplicate
+}
 
 // Function to refresh GHL API token
 async function refreshGHLToken() {
@@ -83,112 +79,96 @@ app.post('/bluebubbles/events', async (req, res) => {
     const { guid, text, isFromMe, handle } = data;
     const address = handle?.address;
 
-    // Check for duplicate GUID in Redis
-    redisClient.get(guid, async (err, result) => {
-        if (err) {
-            console.error('❌ Error checking GUID in Redis:', err);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
+    if (!guid || !text || !address ) {
+        console.error("❌ Missing required fields in BlueBubbles event:", data);
+        if (!guid) console.error("❌ Missing field: guid");
+        if (!text) console.error("❌ Missing field: text");    
+        if (!address) console.error("❌ Missing field: address");
+        return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
+    }
 
-        if (result) {
-            console.log('❌ Duplicate GUID detected, ignoring...');
-            return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-        }
+    // Check for duplicate GUID
+    if (storeAndCheckGuid(guid)) {
+        console.log('❌ Duplicate GUID detected, ignoring...');
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
+    }
 
-        // Store GUID in Redis with a 24-hour expiration
-        redisClient.setex(guid, 24 * 60 * 60, JSON.stringify(data), (err) => {
-            if (err) {
-                console.error('❌ Error storing GUID in Redis:', err);
-            } else {
-                console.log('✅ GUID stored in Redis for 24 hours');
+    console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
+
+    try {
+        // ✅ Find the corresponding contact in Go High-Level
+        const ghlContact = await axios.get(
+            `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Version": "2021-04-15",
+                    "Accept": "application/json"
+                }
             }
-        });
+        );
 
-        if (!guid || !text || !address ) {
-            console.error("❌ Missing required fields in BlueBubbles event:", data);
-            if (!guid) console.error("❌ Missing field: guid");
-            if (!text) console.error("❌ Missing field: text");    
-            if (!address) console.error("❌ Missing field: address");
-            return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
+        let contactId = ghlContact.data?.contacts?.[0]?.id;
+
+        // ✅ If contact does not exist, ignore
+        if (!contactId) {
+            console.log("❌ No existing contact found, ignoring message...");
+            return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
         }
 
-        console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
+        // ✅ Find the corresponding conversation in Go High-Level
+        const ghlConversation = await axios.get(
+            `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Version": "2021-04-15",
+                    "Accept": "application/json"
+                }
+            }
+        );
 
+        let conversationId = ghlConversation.data?.conversations?.[0]?.id;
+
+        // ✅ If conversation does not exist, ignore
+        if (!conversationId) {
+            console.log("❌ No existing conversation found, ignoring message...");
+            return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
+        }
+
+        // ✅ Send the message to Go High-Level
         try {
-            // ✅ Find the corresponding contact in Go High-Level
-            const ghlContact = await axios.get(
-                `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
+            await axios.post(
+                `https://services.leadconnectorhq.com/conversations/messages/inbound`,
+                {
+                    'type': 'Custom', 
+                    'conversationProviderId': '67d49af815d7f0f0116431cd',
+                    'conversationId': conversationId,
+                    'message': text,
+                    'direction': isFromMe ? 'outbound' : 'inbound',
+                },
                 {
                     headers: {
                         "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Version": "2021-04-15",
-                        "Accept": "application/json"
+                        "Content-Type": "application/json",
+                        "Version": "2021-04-15"
                     }
                 }
             );
-
-            let contactId = ghlContact.data?.contacts?.[0]?.id;
-
-            // ✅ If contact does not exist, ignore
-            if (!contactId) {
-                console.log("❌ No existing contact found, ignoring message...");
-                return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
-            }
-
-            // ✅ Find the corresponding conversation in Go High-Level
-            const ghlConversation = await axios.get(
-                `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
-                {
-                    headers: {
-                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Version": "2021-04-15",
-                        "Accept": "application/json"
-                    }
-                }
-            );
-
-            let conversationId = ghlConversation.data?.conversations?.[0]?.id;
-
-            // ✅ If conversation does not exist, ignore
-            if (!conversationId) {
-                console.log("❌ No existing conversation found, ignoring message...");
-                return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
-            }
-
-            // ✅ Send the message to Go High-Level
-            try {
-                await axios.post(
-                    `https://services.leadconnectorhq.com/conversations/messages/inbound`,
-                    {
-                        'type': 'Custom', 
-                        'conversationProviderId': '67d49af815d7f0f0116431cd',
-                        'conversationId': conversationId,
-                        'message': text,
-                        'direction': isFromMe ? 'outbound' : 'inbound',
-                    },
-                    {
-                        headers: {
-                            "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                            "Content-Type": "application/json",
-                            "Version": "2021-04-15"
-                        }
-                    }
-                );
-
-            } catch (error) {
-                console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
-                return res.status(500).json({ error: "Internal server error" });
-            }
-
-            console.log("✅ Message successfully forwarded to Go High-Level!");
-
-            res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
 
         } catch (error) {
-            console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
-            res.status(500).json({ error: "Internal server error" });
+            console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
+            return res.status(500).json({ error: "Internal server error" });
         }
-    });
+
+        console.log("✅ Message successfully forwarded to Go High-Level!");
+
+        res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
+
+    } catch (error) {
+        console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles
