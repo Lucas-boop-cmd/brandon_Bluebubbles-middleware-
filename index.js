@@ -92,7 +92,7 @@ app.post('/bluebubbles/events', async (req, res) => {
         const queryResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/query?password=${BLUEBUBBLES_PASSWORD}`,
             {
-                limit: 100,
+                limit: 500,
                 offset: 0,
                 where: [
                     {
@@ -192,7 +192,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             return res.status(500).json({ error: "Internal server error" });
         }
 
-        console.log("✅ Message successfully forwarded to Go High-Level!");
+        console.log("✅ Message successfully forwarded to Go High-Level!, text, guid, address");
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
 
