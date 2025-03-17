@@ -69,14 +69,15 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(200).json({ status: 'ignored', message: 'Invalid event type or missing data' });
     }
 
-    const { guid, text, isFromMe, handle } = data;
+    const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
-    if (!guid || !text || !address ) {
+    if (!guid || !text || !address || !originalROWID) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
+        if (!originalROWID) console.error("❌ Missing field: originalROWID");
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
@@ -114,8 +115,9 @@ app.post('/bluebubbles/events', async (req, res) => {
         // Log the response data
         console.log('🔍 BlueBubbles query response data:', queryResponse.data);
 
-        // Check if the message with the same GUID already exists and is not the current message
-        if (queryResponse.data.data.length > 0 && queryResponse.data.data[0].originalROWID !== data.originalROWID) {
+        // Check if the message with the same GUID and originalROWID already exists
+        const duplicateMessage = queryResponse.data.data.find(message => message.originalROWID === originalROWID);
+        if (duplicateMessage) {
             console.log('❌ Duplicate message detected in BlueBubbles, ignoring...');
             return res.status(200).json({ status: 'ignored', message: 'Duplicate message in BlueBubbles' });
         }
