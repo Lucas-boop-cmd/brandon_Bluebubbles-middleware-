@@ -1,62 +1,55 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const { storeGUID, loadGUIDs } = require('./dataBase'); // Import database functions
+const { storeGUID, loadGUIDs, updateGHLTokens, loadTokens, refreshGHLToken } = require('./dataBase'); // Import database functions
 
 app.use(express.json());
 
 // Local variables for environment variables
 const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
-const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
-let GHL_ACCESS_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoQ2xhc3MiOiJMb2NhdGlvbiIsImF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJzb3VyY2UiOiJJTlRFR1JBVElPTiIsInNvdXJjZUlkIjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIiwiY2hhbm5lbCI6Ik9BVVRIIiwicHJpbWFyeUF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJvYXV0aE1ldGEiOnsic2NvcGVzIjpbImNvbnZlcnNhdGlvbnMucmVhZG9ubHkiLCJjb252ZXJzYXRpb25zLndyaXRlIiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLnJlYWRvbmx5IiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLndyaXRlIiwiY29udmVyc2F0aW9ucy9yZXBvcnRzLnJlYWRvbmx5IiwiY29udGFjdHMucmVhZG9ubHkiLCJjb250YWN0cy53cml0ZSIsInVzZXJzLnJlYWRvbmx5IiwidXNlcnMud3JpdGUiLCJ3b3JrZmxvd3MucmVhZG9ubHkiXSwiY2xpZW50IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5IiwiY2xpZW50S2V5IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIn0sImlhdCI6MTc0MjIyMDk0Mi45NjIsImV4cCI6MTc0MjMwNzM0Mi45NjJ9.rw5UDFVbPeswaDt0_vmFD55gYFN8lehGMAP3SJqjtlfDKl4RF8K2xF8WogB1QbIT8fEQeLv46OU4kmfGgZPHA1lnAKrxRX_AYK4UjatFMmXKaKtmFTjp083IvSswCwQgVZuruEMgSlUAoAFX28oI7Lwx-OZc7Uk81dvdGtkKII5WuvQv00gRK2fgm5IDPX3c2lw118OqNBdOYTCLJahgOF2lLw17-GKrEpZu7jHbXR3qM-V78mtZZLofaF1Mp7PT62l-QtwR6G6PvK1VrREL_0wAOzpvHo9qi1vFbJo_Z4kz_YiqRCMado3rX2uGnWyiJ0He0zQ_SwSxeB9OUuIlpBc-Zvs27twHMhKHAEh1z0I2ev5XW-GN1h-uosylfe4MwTMmLXFvV2Cb1PQA9pt1nTq-sa7xCz_zfJPJwAtl9AKijOgWMxgfOWILS9lspRoldo9lBBziNaMBipy-h4kfG4H7p-YGBcBJgc5TUJeXXPxpx7cdGau3FPxw7LuYmhjZ78NOdjJz_B8-rjLBIxKUmVIPkmnMnt10_pBU5p9LnKrzRBiYXEyvj7v_CeNQWHdh_dx36vL0RfdWk2DjB8gdzmVCVuizA-vw4NO6l1tCgCe8aiNp7Rp6DTxY9Mcz1-BeibIjo_hppg2Q6pcR7iZx2NIgtlDuPkKpNBhr2AUrzKA';
-let GHL_REFRESH_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoQ2xhc3MiOiJMb2NhdGlvbiIsImF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJzb3VyY2UiOiJJTlRFR1JBVElPTiIsInNvdXJjZUlkIjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIiwiY2hhbm5lbCI6Ik9BVVRIIiwicHJpbWFyeUF1dGhDbGFzc0lkIjoiaDRCV2NoTmR5Nld5a25nMUZmVEgiLCJvYXV0aE1ldGEiOnsic2NvcGVzIjpbImNvbnZlcnNhdGlvbnMucmVhZG9ubHkiLCJjb252ZXJzYXRpb25zLndyaXRlIiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLnJlYWRvbmx5IiwiY29udmVyc2F0aW9ucy9tZXNzYWdlLndyaXRlIiwiY29udmVyc2F0aW9ucy9yZXBvcnRzLnJlYWRvbmx5IiwiY29udGFjdHMucmVhZG9ubHkiLCJjb250YWN0cy53cml0ZSIsInVzZXJzLnJlYWRvbmx5IiwidXNlcnMud3JpdGUiLCJ3b3JrZmxvd3MucmVhZG9ubHkiXSwiY2xpZW50IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5IiwiY2xpZW50S2V5IjoiNjdkNDk5YmQzZTRhOGMzMDc2ZDVlMzI5LW04OTlxYjRsIn0sImlhdCI6MTc0MjIyMDk0Mi45NzIsImV4cCI6MTc3Mzc1Njk0Mi45NzIsInVuaXF1ZUlkIjoiYzViMGY4NzItMzUwNi00ZDA0LTllYTItMjNkZjhkZDg1YTJlIn0.Ogz-eS3hKgnE8mzzsPL2DXorJD6LrZdEPTy8XN8ujfB4PCLtkRda6z9VNrCm-J5XuOMKK3umZSj-YLchnNOjS6hUO8psLoteJlBKgjh_QG-Z7sSuBBG5uQWQ296nO_o9gdCh8mXveOV0RIWQJ5ljhRojtNyKjHPRvIjVKvcLtaqiz2HeOHIf2-MJNWL9zkVT2GcQpejafpcLQ67foo64kRJDsSZmqrSk_oxVPUqrDJiu80mRH2EDK1PpWrQqZKP3l_YPQpMlQXNeNJF8KnvDcw4cWI35a_7urecgV0qDB5jE3MGR0NHEnNL0EupB0Dv57IlBVOFnn5Knh3zVCMtOjODrtX_XykWx6T6vDZNFqfVdlfIWbvvQxmYyPyvcxegK0ZIq8h22FwE2CFsC1qVKSgWZ2z6iNqfnkPhm99czUUOf6BxhA93GLzctgYYK7WhtJqgiYa9X78TsF_INPA_ESl6RgOJrcj18_r7TeL14WRUDmnEyus4__fR18iz3nH_Yjq33jaL-VPapubqv7EVyUOxXKV51MyI8Cw5zgTuLbf2-G_7Err2nE4esb04aXy9L_FQA9yaurmyZ-Mrca68xHU15xrCfutA4cL9gvudn-gaX67hMX0BdAlyz3XzTbBC4NCbbVmanpmsOykTT2G9LofhBRBHamoDN76Lo5CYlyAY';
+// Load tokens from the database
+let tokens = loadTokens();
+let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN?.token;
+let GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN?.token;
+let tokenTimestamp = tokens.GHL_ACCESS_TOKEN?.timestamp || 0;
+
 const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
 const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
 const LocationId = 'h4BWchNdy6Wykng1FfTH';
-let tokenExpiration = Date.now() + 22 * 60 * 60 * 1000; // 22 hours from now
+const TOKEN_REFRESH_INTERVAL = 20 * 60 * 60 * 1000; // 20 hours
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
 
-// Function to refresh GHL API token
-async function refreshGHLToken() {
+// Middleware to check token expiration before API calls
+async function checkTokenExpiration(req, res, next) {
+    if (Date.now() - tokenTimestamp >= TOKEN_REFRESH_INTERVAL) {
+        const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await refreshGHLToken();
+        GHL_ACCESS_TOKEN = newAccessToken;
+        tokenTimestamp = newTokenTimestamp;
+    }
+    next();
+}
+
+// Function to handle API call with token refresh on 401 error
+async function handleApiCallWithTokenRefresh(apiCall) {
     try {
-        const response = await axios.post(
-            'https://services.leadconnectorhq.com/oauth/token',
-            {
-                client_id: CLIENT_ID,
-                client_secret: GHL_CLIENT_SECRET,
-                grant_type: 'refresh_token',
-                refresh_token: GHL_REFRESH_TOKEN
-            },
-
-                {
-                    headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-
-        GHL_ACCESS_TOKEN = response.data.access_token;
-        GHL_REFRESH_TOKEN = response.data.refresh_token;
-        tokenExpiration = Date.now() + 22 * 60 * 60 * 1000; // Reset expiration to 22 hours from now
-
-        console.log('✅ GHL API token refreshed successfully');
+        return await apiCall();
     } catch (error) {
-        console.error('❌ Error refreshing GHL API token:', error.response ? error.response.data : error.message);
+        if (error.response && error.response.status === 401) {
+            console.log('🔄 Refreshing GHL API token due to 401 error...');
+            const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await refreshGHLToken();
+            GHL_ACCESS_TOKEN = newAccessToken;
+            tokenTimestamp = newTokenTimestamp;
+            return await apiCall();
+        } else {
+            throw error;
+        }
     }
 }
 
-// Middleware to check token expiration before API calls
-async function checkTokenExpiration(req, res, next) {
-    if (Date.now() >= tokenExpiration) {
-        await refreshGHLToken();
-    }
-    next();
-}                 
-
- // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
-app.post('/bluebubbles/events', async (req, res) => {
+// ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
+app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
 
     const { type, data } = req.body;
@@ -99,7 +92,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     try {
         // ✅ Find the corresponding contact in Go High-Level
-        const ghlContact = await axios.get(
+        const ghlContact = await handleApiCallWithTokenRefresh(() => axios.get(
             `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
             {
                 headers: {
@@ -108,7 +101,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                     "Accept": "application/json"
                 }
             }
-        );
+        ));
 
         let contactId = ghlContact.data?.contacts?.[0]?.id;
 
@@ -119,7 +112,7 @@ app.post('/bluebubbles/events', async (req, res) => {
         }
 
         // ✅ Find the corresponding conversation in Go High-Level
-        const ghlConversation = await axios.get(
+        const ghlConversation = await handleApiCallWithTokenRefresh(() => axios.get(
             `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
             {
                 headers: {
@@ -128,7 +121,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                     "Accept": "application/json"
                 }
             }
-        );
+        ));
 
         let conversationId = ghlConversation.data?.conversations?.[0]?.id;
 
@@ -140,7 +133,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
         // ✅ Send the message to Go High-Level
         try {
-            await axios.post(
+            await handleApiCallWithTokenRefresh(() => axios.post(
                 `https://services.leadconnectorhq.com/conversations/messages/inbound`,
                 {
                     'type': 'Custom', 
@@ -156,7 +149,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                         "Version": "2021-04-15"
                     }
                 }
-            );
+            ));
 
         } catch (error) {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
@@ -202,9 +195,12 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
+// Manually construct the chat GUID
+console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
+
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
         try {
-            const ghlResponse = await axios.put(
+            const ghlResponse = await handleApiCallWithTokenRefresh(() => axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
                     status: "delivered"
@@ -217,7 +213,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                         "Version": "2021-04-15"
                     }
                 }
-            );
+            ));
 
             if (ghlResponse.status === 200) {
                 console.log("✅ Message status updated in Go High-Level!", ghlResponse.data, messageId);
@@ -232,9 +228,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
 
         // ✅ Query for the handle to get the service
         console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
-        const handleResponse = await axios.get(
+        const handleResponse = await handleApiCallWithTokenRefresh(() => axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
-        );
+        ));
 
         console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
 
@@ -252,7 +248,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         // ✅ Send the message to BlueBubbles
         const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chatGuid} and tempGuid: ${tempGuid}`);
-        const sendMessageResponse = await axios.post(
+        const sendMessageResponse = await handleApiCallWithTokenRefresh(() => axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
                 chatGuid: chatGuid,
@@ -265,7 +261,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                     "Content-Type": "application/json"
                 }
             }
-        );
+        ));
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
 
