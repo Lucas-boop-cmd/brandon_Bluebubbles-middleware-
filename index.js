@@ -114,8 +114,8 @@ app.post('/bluebubbles/events', async (req, res) => {
         // Log the response data
         console.log('🔍 BlueBubbles query response data:', queryResponse.data);
 
-        // Check if the message with the same GUID already exists
-        if (queryResponse.data.data.length > 0) {
+        // Check if the message with the same GUID already exists and is not the current message
+        if (queryResponse.data.data.length > 1) {
             console.log('❌ Duplicate message detected in BlueBubbles, ignoring...');
             return res.status(200).json({ status: 'ignored', message: 'Duplicate message in BlueBubbles' });
         }
