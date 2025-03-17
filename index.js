@@ -20,16 +20,6 @@ const guids = new Set();
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
 
-// Function to store GUIDs and check for duplicates
-function storeAndCheckGuid(guid) {
-    if (guids.has(guid)) {
-        return true; // Duplicate found
-    }
-    guids.add(guid);
-    setTimeout(() => guids.delete(guid), 24 * 60 * 60 * 1000); // Remove GUID after 24 hours
-    return false; // No duplicate
-}
-
 // Function to refresh GHL API token
 async function refreshGHLToken() {
     try {
@@ -90,16 +80,52 @@ app.post('/bluebubbles/events', async (req, res) => {
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
-    // Check for duplicate GUID
-    if (storeAndCheckGuid(guid)) {
-        console.log('❌ Duplicate GUID detected, ignoring...');
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-    }
-
+   
     // Check if the last Go High-Level message equals the current BlueBubbles event text
     if (lastGHLMessages.get(address) === text) {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
+    }
+
+    // Query BlueBubbles for messages based on GUID
+    try {
+        const queryResponse = await axios.post(
+            `${BLUEBUBBLES_API_URL}/api/v1/message/query?password=${BLUEBUBBLES_PASSWORD}`,
+            {
+                limit: 10,
+                offset: 0,
+                chatGuid: "",
+                with: [
+                    "chat",
+                    "chat.participants",
+                    "attachment",
+                    "handle",
+                    "sms"
+                ],
+                where: [
+                    {
+                        statement: "message.guid = :guid",
+                        args: {
+                            guid: guid
+                        }
+                    }
+                ],
+                sort: "DESC"
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        if (queryResponse.data.data.length > 0) {
+            console.log('❌ Duplicate message detected in BlueBubbles, ignoring...');
+            return res.status(200).json({ status: 'ignored', message: 'Duplicate message in BlueBubbles' });
+        }
+    } catch (error) {
+        console.error("❌ Error querying BlueBubbles for messages:", error.response ? error.response.data : error.message);
+        return res.status(500).json({ error: "Internal server error" });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
