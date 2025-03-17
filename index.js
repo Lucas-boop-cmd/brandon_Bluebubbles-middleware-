@@ -17,6 +17,9 @@ let tokenExpiration = Date.now() + 22 * 60 * 60 * 1000; // 22 hours from now
 // Store to keep track of GUIDs in the past 24 hours
 const guids = new Set();
 
+// Store to keep track of the last message text from Go High-Level
+const lastGHLMessages = new Map();
+
 // Function to store GUIDs and check for duplicates
 function storeAndCheckGuid(guid) {
     if (guids.has(guid)) {
@@ -91,6 +94,12 @@ app.post('/bluebubbles/events', async (req, res) => {
     if (storeAndCheckGuid(guid)) {
         console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
+    }
+
+    // Check if the last Go High-Level message equals the current BlueBubbles event text
+    if (lastGHLMessages.get(address) === text) {
+        console.log('❌ Duplicate message from GHL detected, ignoring...');
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
@@ -266,6 +275,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         );
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
+
+        // Store the last message text from Go High-Level
+        lastGHLMessages.set(phone, message);
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
