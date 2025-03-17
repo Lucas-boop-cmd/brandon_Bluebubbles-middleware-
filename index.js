@@ -71,7 +71,9 @@ app.post('/bluebubbles/events', async (req, res) => {
     const address = handle?.address;
 
     // ✅ Check if GUID already exists in the database
+    console.log('🔍 Querying database for existing GUIDs...');
     const existingGUIDs = loadGUIDs();
+    console.log('🔍 Existing GUIDs:', existingGUIDs);
     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
     if (isDuplicate) {
         console.log('❌ Duplicate GUID detected, ignoring...');
@@ -269,6 +271,11 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
 
         // Store the last message text and messageId from Go High-Level
         lastGHLMessages.set(phone, { text: message });
+
+        // Store the response GUID in the database
+        const responseGUID = sendMessageResponse.data.data.guid;
+        console.log(`🔍 Storing response GUID in database: ${responseGUID}`);
+        storeGUID(responseGUID);
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
