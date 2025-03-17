@@ -1,7 +1,20 @@
 const express = require('express');
 const axios = require('axios');
+const redis = require('redis');
 const app = express();
 
+app.use(express.json());
+
+// Initialize Redis client
+const redisClient = redis.createClient();
+
+redisClient.on('error', (err) => {
+    console.error('❌ Redis error:', err);
+});
+
+redisClient.on('connect', () => {
+    console.log('✅ Connected to Redis');
+});
 app.use(express.json());
 
 // Local variables for environment variables
@@ -51,18 +64,6 @@ async function checkTokenExpiration(req, res, next) {
     next();
 }                 
 
-// Store to keep track of the last processed GUID for each chat
-const lastProcessedGuids = new Map();
-
-// Store to keep track of the last processed messageId for each conversation
-const lastProcessedMessageIds = new Map();
-
-// Store to keep track of the last message text for each conversation
-const lastMessageTexts = new Map();
-
-// Store to keep track of the last message text and address from Go High-Level
-const lastGHLMessages = new Map();
-
  // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
@@ -78,105 +79,112 @@ app.post('/bluebubbles/events', async (req, res) => {
     const { guid, text, isFromMe, handle } = data;
     const address = handle?.address;
 
-    if (!guid || !text || !address ) {
-        console.error("❌ Missing required fields in BlueBubbles event:", data);
-        if (!guid) console.error("❌ Missing field: guid");
-        if (!text) console.error("❌ Missing field: text");    
-        if (!address) console.error("❌ Missing field: address");
-        return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
-    }
-
-    // ✅ Block duplicate messages based on the last Guid from the chat
-    if (lastProcessedGuids.get(address) === guid) {
-        console.log("❌ Duplicate GUID detected, ignoring...");
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-    }
-
-    // ✅ Block messages if the address and text match the last GHL message
-    if (lastGHLMessages.get(address) === text) {
-        console.log("❌ Duplicate message from GHL detected, ignoring...");
-        return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
-    }
-
-    console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
-
-    try {
-        // ✅ Find the corresponding contact in Go High-Level
-        const ghlContact = await axios.get(
-            `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
-            {
-                headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Version": "2021-04-15",
-                    "Accept": "application/json"
-                }
-            }
-        );
-
-        let contactId = ghlContact.data?.contacts?.[0]?.id;
-
-        // ✅ If contact does not exist, ignore
-        if (!contactId) {
-            console.log("❌ No existing contact found, ignoring message...");
-            return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
+    // Check for duplicate GUID in Redis
+    redisClient.get(guid, async (err, result) => {
+        if (err) {
+            console.error('❌ Error checking GUID in Redis:', err);
+            return res.status(500).json({ error: 'Internal server error' });
         }
 
-        // ✅ Find the corresponding conversation in Go High-Level
-        const ghlConversation = await axios.get(
-            `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
-            {
-                headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Version": "2021-04-15",
-                    "Accept": "application/json"
-                }
-            }
-        );
-
-        let conversationId = ghlConversation.data?.conversations?.[0]?.id;
-
-        // ✅ If conversation does not exist, ignore
-        if (!conversationId) {
-            console.log("❌ No existing conversation found, ignoring message...");
-            return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
+        if (result) {
+            console.log('❌ Duplicate GUID detected, ignoring...');
+            return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
         }
 
-        // ✅ Send the message to Go High-Level
+        // Store GUID in Redis with a 24-hour expiration
+        redisClient.setex(guid, 24 * 60 * 60, JSON.stringify(data), (err) => {
+            if (err) {
+                console.error('❌ Error storing GUID in Redis:', err);
+            } else {
+                console.log('✅ GUID stored in Redis for 24 hours');
+            }
+        });
+
+        if (!guid || !text || !address ) {
+            console.error("❌ Missing required fields in BlueBubbles event:", data);
+            if (!guid) console.error("❌ Missing field: guid");
+            if (!text) console.error("❌ Missing field: text");    
+            if (!address) console.error("❌ Missing field: address");
+            return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
+        }
+
+        console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
+
         try {
-            await axios.post(
-                `https://services.leadconnectorhq.com/conversations/messages/inbound`,
-                {
-                    'type': 'Custom', 
-                    'conversationProviderId': '67d49af815d7f0f0116431cd',
-                    'conversationId': conversationId,
-                    'message': text,
-                    'direction': isFromMe ? 'outbound' : 'inbound',
-                },
+            // ✅ Find the corresponding contact in Go High-Level
+            const ghlContact = await axios.get(
+                `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
                 {
                     headers: {
                         "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Content-Type": "application/json",
-                        "Version": "2021-04-15"
+                        "Version": "2021-04-15",
+                        "Accept": "application/json"
                     }
                 }
             );
 
+            let contactId = ghlContact.data?.contacts?.[0]?.id;
+
+            // ✅ If contact does not exist, ignore
+            if (!contactId) {
+                console.log("❌ No existing contact found, ignoring message...");
+                return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
+            }
+
+            // ✅ Find the corresponding conversation in Go High-Level
+            const ghlConversation = await axios.get(
+                `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Version": "2021-04-15",
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            let conversationId = ghlConversation.data?.conversations?.[0]?.id;
+
+            // ✅ If conversation does not exist, ignore
+            if (!conversationId) {
+                console.log("❌ No existing conversation found, ignoring message...");
+                return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
+            }
+
+            // ✅ Send the message to Go High-Level
+            try {
+                await axios.post(
+                    `https://services.leadconnectorhq.com/conversations/messages/inbound`,
+                    {
+                        'type': 'Custom', 
+                        'conversationProviderId': '67d49af815d7f0f0116431cd',
+                        'conversationId': conversationId,
+                        'message': text,
+                        'direction': isFromMe ? 'outbound' : 'inbound',
+                    },
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                            "Content-Type": "application/json",
+                            "Version": "2021-04-15"
+                        }
+                    }
+                );
+
+            } catch (error) {
+                console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
+                return res.status(500).json({ error: "Internal server error" });
+            }
+
+            console.log("✅ Message successfully forwarded to Go High-Level!");
+
+            res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
+
         } catch (error) {
-            console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
-            return res.status(500).json({ error: "Internal server error" });
+            console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
+            res.status(500).json({ error: "Internal server error" });
         }
-
-        // ✅ Mark the message as processed
-        lastMessageTexts.set(text);
-
-        console.log("✅ Message successfully forwarded to Go High-Level!");
-
-        res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
-
-    } catch (error) {
-        console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
-        res.status(500).json({ error: "Internal server error" });
-    }
+    });
 });
 
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles
@@ -274,9 +282,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         );
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
-
-        // ✅ Mark the message as processed
-        lastGHLMessages.set(phone, message);
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
