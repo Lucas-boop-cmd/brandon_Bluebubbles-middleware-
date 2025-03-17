@@ -93,7 +93,6 @@ app.post('/bluebubbles/events', async (req, res) => {
             {
                 limit: 100,
                 offset: 0,
-                with: [ chat.participants = address ],
                 where: [
                     {
                         statement: "message.guid = :guid",
