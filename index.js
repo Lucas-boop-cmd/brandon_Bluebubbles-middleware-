@@ -1,6 +1,8 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
+const { storeGUID, loadGUIDs } = require('./dataBase'); // Import database functions
+
 
 app.use(express.json());
 
@@ -13,9 +15,6 @@ const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
 const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
 const LocationId = 'h4BWchNdy6Wykng1FfTH';
 let tokenExpiration = Date.now() + 22 * 60 * 60 * 1000; // 22 hours from now
-
-// Store to keep track of GUIDs in the past 24 hours
-const guids = new Set();
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
@@ -72,6 +71,16 @@ app.post('/bluebubbles/events', async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
+
+     // ✅ Check if GUID already exists in the database
+     const existingGUIDs = loadGUIDs();
+     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
+        if (isDuplicate) {
+            console.log('❌ Duplicate GUID detected, ignoring...');
+            return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
+        }
+    
+    
     if (!guid || !text || !address || !originalROWID) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
@@ -86,31 +95,6 @@ app.post('/bluebubbles/events', async (req, res) => {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
     }
-
-    // Query BlueBubbles for messages based on GUID
-    try {
-        console.log(`🔍 Querying BlueBubbles for messages with GUID: ${guid}`);
-        const queryResponse = await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/message/query?password=${BLUEBUBBLES_PASSWORD}`,
-            {
-                limit: 100,
-                offset: 0,
-                where: [
-                    {
-                        statement: "message.guid = :guid",
-                        args: {
-                            guid: guid
-                        }
-                    }
-                ],
-                sort: "DESC"
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
-        );
 
         // Log the response data
         console.log('🔍 BlueBubbles query response data:', queryResponse.data);
