@@ -95,7 +95,7 @@ async function checkAndRefreshToken() {
                     client_secret: GHL_CLIENT_SECRET,
                     grant_type: 'refresh_token',
                     refresh_token: GHL_REFRESH_TOKEN,
-                    user_Type: 'Location'
+                    user_type: 'Location'
                 },
                 {
                     headers: {
