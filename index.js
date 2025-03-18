@@ -273,18 +273,18 @@ console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 app.get('/ghl/webhook', async (req, res) => {
     console.log('📥 Received GET request for connecting external account:', req.query);
 
-    // Destructure clientId and scopes from query parameters
-    const { clientId, scopes } = req.query;
+    // Destructure query parameters
+    const { client_id, scope, response_type, state, redirect_uri } = req.query;
 
-    if (!clientId || !scopes) {
-        console.error("❌ Missing required query parameters: clientId or scopes");
-        return res.status(400).json({ error: "Missing required query parameters: clientId or scopes" });
+    if (!client_id || !scope || !response_type || !state || !redirect_uri) {
+        console.error("❌ Missing required query parameters");
+        return res.status(400).json({ error: "Missing required query parameters" });
     }
 
-    console.log(`🔍 Received clientId: ${clientId}, scopes: ${scopes}`);
+    console.log(`🔍 Received client_id: ${client_id}, scope: ${scope}, response_type: ${response_type}, state: ${state}, redirect_uri: ${redirect_uri}`);
 
-    // Respond with the received clientId and scopes
-    res.status(200).json({ clientId, scopes });
+    // Respond with the received query parameters
+    res.status(200).json({ client_id, scope, response_type, state, redirect_uri });
 });
 
 // Start the server
