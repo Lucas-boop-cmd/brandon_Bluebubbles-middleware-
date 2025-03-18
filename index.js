@@ -9,11 +9,9 @@ app.use(express.json());
 const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
 // Load tokens from the database
 let tokens = loadTokens();
-let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN?.token;
-let tokenTimestamp = tokens.GHL_ACCESS_TOKEN?.timestamp || 0;
+let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
+let tokenTimestamp = tokens.timestamp || 0;
 
-const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
-const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
 const LocationId = 'h4BWchNdy6Wykng1FfTH';
 
 // Store to keep track of the last message text from Go High-Level
@@ -22,12 +20,12 @@ const lastGHLMessages = new Map();
 // Middleware to check token expiration before API calls
 async function checkTokenExpiration(req, res, next) {
     const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await checkAndRefreshToken();
-    GHL_ACCESS_TOKEN = newAccessToken;
-    tokenTimestamp = newTokenTimestamp;
-    next();
+GHL_ACCESS_TOKEN = newAccessToken;
+        tokenTimestamp = newTokenTimestamp;
+        next();
 }
 
-// ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
+ // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
 
@@ -42,26 +40,26 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
-    // ✅ Check if GUID already exists in the database
+     // ✅ Check if GUID already exists in the database
     console.log('🔍 Querying database for existing GUIDs...');
     const existingGUIDs = loadGUIDs();
     console.log('🔍 Existing GUIDs:', existingGUIDs);
     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
     if (isDuplicate) {
-        console.log('❌ Duplicate GUID detected, ignoring...');
+            console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-    }
-
+        }
+    
     if (!guid || !text || !address || !originalROWID) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
-        if (!originalROWID) console.error("❌ Missing field: originalROWID");
+if (!originalROWID) console.error("❌ Missing field: originalROWID");
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
-    // Check if the last Go High-Level message equals the current BlueBubbles event text
+// Check if the last Go High-Level message equals the current BlueBubbles event text
     if (lastGHLMessages.get(address) === text) {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
@@ -173,7 +171,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     
     console.log(`🔍 New message from ${userId}: ${message}`);
 
-    try {
+try {
 // Manually construct the chat GUID
 console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 

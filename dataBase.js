@@ -44,7 +44,7 @@ function loadTokens() {
 
 // Save tokens to the database
 function saveTokens(tokens) {
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
     data.tokens = tokens;
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
@@ -53,20 +53,37 @@ function saveTokens(tokens) {
 function setGHLTokens(accessToken, refreshToken) {
     const timestamp = Date.now();
     const tokens = {
-        GHL_ACCESS_TOKEN: { token: accessToken, timestamp },
-        GHL_REFRESH_TOKEN: { token: refreshToken, timestamp }
+        GHL_ACCESS_TOKEN: accessToken,
+        GHL_REFRESH_TOKEN: refreshToken,
+        timestamp
     };
     saveTokens(tokens);
+}
+
+// Update the uploadTokens.js file with new tokens
+function updateUploadTokensFile(accessToken, refreshToken) {
+    const content = `
+const { uploadTokens } = require('./dataBase');
+
+// Example tokens
+const accessToken = '${accessToken}';
+const refreshToken = '${refreshToken}';
+
+// Manually upload tokens
+uploadTokens(accessToken, refreshToken);
+`;
+
+    fs.writeFileSync(path.join(__dirname, 'uploadTokens.js'), content);
 }
 
 // Check token expiration and refresh if needed
 async function checkAndRefreshToken() {
     const tokens = loadTokens();
-    const tokenTimestamp = tokens.GHL_ACCESS_TOKEN?.timestamp || 0;
+    const tokenTimestamp = tokens.timestamp || 0;
     const TOKEN_REFRESH_INTERVAL = 20 * 60 * 60 * 1000; // 20 hours
 
     if (Date.now() - tokenTimestamp >= TOKEN_REFRESH_INTERVAL) {
-        const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN?.token;
+        const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN;
         const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
         const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
 
@@ -77,7 +94,8 @@ async function checkAndRefreshToken() {
                     client_id: CLIENT_ID,
                     client_secret: GHL_CLIENT_SECRET,
                     grant_type: 'refresh_token',
-                    refresh_token: GHL_REFRESH_TOKEN
+                    refresh_token: GHL_REFRESH_TOKEN,
+                    user_Type: 'Location'
                 },
                 {
                     headers: {
@@ -92,6 +110,10 @@ async function checkAndRefreshToken() {
 
             setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
 
+             // Update the uploadTokens.js file with new tokens
+             updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
+
+
             console.log('✅ GHL API token refreshed successfully');
             return { GHL_ACCESS_TOKEN, tokenTimestamp: newTimestamp };
         } catch (error) {
@@ -100,7 +122,12 @@ async function checkAndRefreshToken() {
         }
     }
 
-    return { GHL_ACCESS_TOKEN: tokens.GHL_ACCESS_TOKEN?.token, tokenTimestamp };
+    return { GHL_ACCESS_TOKEN: tokens.GHL_ACCESS_TOKEN, tokenTimestamp };
 }
 
-module.exports = { storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken };
+// Function to manually upload tokens into the database
+function uploadTokens(accessToken, refreshToken) {
+    setGHLTokens(accessToken, refreshToken);
+    console.log('✅ Tokens uploaded successfully');
+}
+module.exports = { storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };
