@@ -283,8 +283,19 @@ app.get('/ghl/webhook', async (req, res) => {
 
     console.log(`🔍 Received client_id: ${client_id}, scope: ${scope}, response_type: ${response_type}, state: ${state}, redirect_uri: ${redirect_uri}`);
 
-    // Respond with the received query parameters
-    res.status(200).json({ client_id, scope, response_type, state, redirect_uri });
+    // Respond with the received query parameters and account details
+    res.status(200).json({
+        message: 'Account connected successfully',
+        account: {
+            name: 'Tru Rate Lending',
+            status: 'connected'
+        },
+        client_id,
+        scope,
+        response_type,
+        state,
+        redirect_uri
+    });
 });
 
 // Start the server
