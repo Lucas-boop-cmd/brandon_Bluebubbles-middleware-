@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken, handleApiCallWithTokenRefresh } = require('./dataBase'); // Import database functions
+const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken } = require('./dataBase'); // Import database functions
 
 app.use(express.json());
 
@@ -71,7 +71,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
 
     try {
         // ✅ Find the corresponding contact in Go High-Level
-        const ghlContact = await handleApiCallWithTokenRefresh(() => axios.get(
+        const ghlContact = await axios.get(
             `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
             {
                 headers: {
@@ -80,7 +80,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
                     "Accept": "application/json"
                 }
             }
-        ));
+        );
 
         let contactId = ghlContact.data?.contacts?.[0]?.id;
 
@@ -91,7 +91,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
         }
 
         // ✅ Find the corresponding conversation in Go High-Level
-        const ghlConversation = await handleApiCallWithTokenRefresh(() => axios.get(
+        const ghlConversation = await axios.get(
             `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
             {
                 headers: {
@@ -100,7 +100,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
                     "Accept": "application/json"
                 }
             }
-        ));
+        );
 
         let conversationId = ghlConversation.data?.conversations?.[0]?.id;
 
@@ -112,7 +112,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
 
         // ✅ Send the message to Go High-Level
         try {
-            await handleApiCallWithTokenRefresh(() => axios.post(
+            await axios.post(
                 `https://services.leadconnectorhq.com/conversations/messages/inbound`,
                 {
                     'type': 'Custom', 
@@ -128,7 +128,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
                         "Version": "2021-04-15"
                     }
                 }
-            ));
+            );
 
         } catch (error) {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
@@ -179,7 +179,7 @@ console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
         try {
-            const ghlResponse = await handleApiCallWithTokenRefresh(() => axios.put(
+            const ghlResponse = await axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
                     status: "delivered"
@@ -192,7 +192,7 @@ console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
                         "Version": "2021-04-15"
                     }
                 }
-            ));
+            );
 
             if (ghlResponse.status === 200) {
                 console.log("✅ Message status updated in Go High-Level!", ghlResponse.data, messageId);
@@ -207,9 +207,9 @@ console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
         // ✅ Query for the handle to get the service
         console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
-        const handleResponse = await handleApiCallWithTokenRefresh(() => axios.get(
+        const handleResponse = await axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
-        ));
+        );
 
         console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
 
@@ -227,7 +227,7 @@ console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
         // ✅ Send the message to BlueBubbles
         const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
         console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chatGuid} and tempGuid: ${tempGuid}`);
-        const sendMessageResponse = await handleApiCallWithTokenRefresh(() => axios.post(
+        const sendMessageResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
                 chatGuid: chatGuid,
@@ -240,7 +240,7 @@ console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
                     "Content-Type": "application/json"
                 }
             }
-        ));
+        );
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
 
