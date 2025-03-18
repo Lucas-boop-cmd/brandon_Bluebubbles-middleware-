@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const { storeGUID, loadGUIDs, checkAndRefreshToken, handleApiCallWithTokenRefresh } = require('./dataBase'); // Import database functions
+const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken, handleApiCallWithTokenRefresh } = require('./dataBase'); // Import database functions
 
 app.use(express.json());
 
