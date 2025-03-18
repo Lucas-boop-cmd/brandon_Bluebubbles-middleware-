@@ -7,6 +7,7 @@ app.use(express.json());
 
 // Local variables for environment variables
 const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
+const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
 // Load tokens from the database
 let tokens = loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
@@ -20,9 +21,9 @@ const lastGHLMessages = new Map();
 // Middleware to check token expiration before API calls
 async function checkTokenExpiration(req, res, next) {
     const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await checkAndRefreshToken();
-    GHL_ACCESS_TOKEN = newAccessToken;
-    tokenTimestamp = newTokenTimestamp;
-    next();
+GHL_ACCESS_TOKEN = newAccessToken;
+        tokenTimestamp = newTokenTimestamp;
+        next();
 }
 
 // Endpoint to manually upload tokens
@@ -35,7 +36,7 @@ app.post('/upload-tokens', (req, res) => {
     res.status(200).json({ status: 'success', message: 'Tokens uploaded successfully' });
 });
 
-// ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
+ // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
 
@@ -50,26 +51,26 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
-    // ✅ Check if GUID already exists in the database
+     // ✅ Check if GUID already exists in the database
     console.log('🔍 Querying database for existing GUIDs...');
     const existingGUIDs = loadGUIDs();
     console.log('🔍 Existing GUIDs:', existingGUIDs);
     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
     if (isDuplicate) {
-        console.log('❌ Duplicate GUID detected, ignoring...');
+            console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-    }
-
+        }
+    
     if (!guid || !text || !address || !originalROWID) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
-        if (!originalROWID) console.error("❌ Missing field: originalROWID");
+if (!originalROWID) console.error("❌ Missing field: originalROWID");
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
-    // Check if the last Go High-Level message equals the current BlueBubbles event text
+// Check if the last Go High-Level message equals the current BlueBubbles event text
     if (lastGHLMessages.get(address) === text) {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
@@ -181,8 +182,8 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     
     console.log(`🔍 New message from ${userId}: ${message}`);
 
-    try {
-        // ✅ Query for the handle to get the service
+try {
+// ✅ Query for the handle to get the service
         console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
         const handleResponse = await axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
@@ -197,9 +198,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             return res.status(404).json({ error: "No service found for handle" });
         }
 
-        // Manually construct the chat GUID
-        const chatGuid = `${service};-;${phone}`;
-        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
+// Manually construct the chat GUID
+const chatGuid = `${service};-;${phone}`;
+console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
         try {
