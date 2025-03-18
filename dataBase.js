@@ -7,12 +7,15 @@ const filePath = path.join(__dirname, 'database.json');
 // Load existing GUIDs or return an empty array if file doesn’t exist
 function loadGUIDs() {
     if (!fs.existsSync(filePath)) return [];
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return data.guids || [];
 }
 
 // Save GUIDs back to the file
 function saveGUIDs(guids) {
-    fs.writeFileSync(filePath, JSON.stringify(guids, null, 2));
+    const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
+    data.guids = guids;
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 // Store a new GUID with timestamp
@@ -110,9 +113,8 @@ async function checkAndRefreshToken() {
 
             setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
 
-             // Update the uploadTokens.js file with new tokens
-             updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
-
+            // Update the uploadTokens.js file with new tokens
+            updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
 
             console.log('✅ GHL API token refreshed successfully');
             return { GHL_ACCESS_TOKEN, tokenTimestamp: newTimestamp };
@@ -130,4 +132,5 @@ function uploadTokens(accessToken, refreshToken) {
     setGHLTokens(accessToken, refreshToken);
     console.log('✅ Tokens uploaded successfully');
 }
+
 module.exports = { storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };
