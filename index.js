@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const { storeGUID, loadGUIDs, updateGHLTokens, loadTokens, refreshGHLToken } = require('./dataBase'); // Import database functions
+const { storeGUID, loadGUIDs, checkAndRefreshToken, handleApiCallWithTokenRefresh } = require('./dataBase'); // Import database functions
 
 app.use(express.json());
 
@@ -10,42 +10,21 @@ const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
 // Load tokens from the database
 let tokens = loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN?.token;
-let GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN?.token;
 let tokenTimestamp = tokens.GHL_ACCESS_TOKEN?.timestamp || 0;
 
 const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
 const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
 const LocationId = 'h4BWchNdy6Wykng1FfTH';
-const TOKEN_REFRESH_INTERVAL = 20 * 60 * 60 * 1000; // 20 hours
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
 
 // Middleware to check token expiration before API calls
 async function checkTokenExpiration(req, res, next) {
-    if (Date.now() - tokenTimestamp >= TOKEN_REFRESH_INTERVAL) {
-        const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await refreshGHLToken();
-        GHL_ACCESS_TOKEN = newAccessToken;
-        tokenTimestamp = newTokenTimestamp;
-    }
+    const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await checkAndRefreshToken();
+    GHL_ACCESS_TOKEN = newAccessToken;
+    tokenTimestamp = newTokenTimestamp;
     next();
-}
-
-// Function to handle API call with token refresh on 401 error
-async function handleApiCallWithTokenRefresh(apiCall) {
-    try {
-        return await apiCall();
-    } catch (error) {
-        if (error.response && error.response.status === 401) {
-            console.log('🔄 Refreshing GHL API token due to 401 error...');
-            const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await refreshGHLToken();
-            GHL_ACCESS_TOKEN = newAccessToken;
-            tokenTimestamp = newTokenTimestamp;
-            return await apiCall();
-        } else {
-            throw error;
-        }
-    }
 }
 
 // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
