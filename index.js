@@ -51,26 +51,26 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
-    // ✅ Check if GUID already exists in the database
+     // ✅ Check if GUID already exists in the database
     console.log('🔍 Querying database for existing GUIDs...');
     const existingGUIDs = loadGUIDs();
     console.log('🔍 Existing GUIDs:', existingGUIDs);
     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
     if (isDuplicate) {
-        console.log('❌ Duplicate GUID detected, ignoring...');
+            console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
-    }
-
+        }
+    
     if (!guid || !text || !address || !originalROWID) {
         console.error("❌ Missing required fields in BlueBubbles event:", data);
         if (!guid) console.error("❌ Missing field: guid");
         if (!text) console.error("❌ Missing field: text");    
         if (!address) console.error("❌ Missing field: address");
-        if (!originalROWID) console.error("❌ Missing field: originalROWID");
+if (!originalROWID) console.error("❌ Missing field: originalROWID");
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
     }
 
-    // Check if the last Go High-Level message equals the current BlueBubbles event text
+// Check if the last Go High-Level message equals the current BlueBubbles event text
     if (lastGHLMessages.get(address) === text) {
         console.log('❌ Duplicate message from GHL detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
@@ -154,7 +154,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     }
 });
 
-// ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles
+// ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles (POST)
 app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
@@ -182,8 +182,8 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     
     console.log(`🔍 New message from ${userId}: ${message}`);
 
-    try {
-        // ✅ Query for the handle to get the service
+try {
+// ✅ Query for the handle to get the service
         console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
         const handleResponse = await axios.get(
             `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
@@ -198,9 +198,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             return res.status(404).json({ error: "No service found for handle" });
         }
 
-        // Manually construct the chat GUID
-        const chatGuid = `${service};-;${phone}`;
-        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
+// Manually construct the chat GUID
+const chatGuid = `${service};-;${phone}`;
+console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
         try {
@@ -267,6 +267,24 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         }
         res.status(500).json({ error: "Internal server error" });
     }
+});
+
+// ✅ Webhook to Connect External Account (GET)
+app.get('/ghl/webhook', async (req, res) => {
+    console.log('📥 Received GET request for connecting external account:', req.query);
+
+    // Destructure clientId and scopes from query parameters
+    const { clientId, scopes } = req.query;
+
+    if (!clientId || !scopes) {
+        console.error("❌ Missing required query parameters: clientId or scopes");
+        return res.status(400).json({ error: "Missing required query parameters: clientId or scopes" });
+    }
+
+    console.log(`🔍 Received clientId: ${clientId}, scopes: ${scopes}`);
+
+    // Respond with the received clientId and scopes
+    res.status(200).json({ clientId, scopes });
 });
 
 // Start the server
