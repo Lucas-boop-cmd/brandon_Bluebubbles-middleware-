@@ -4,9 +4,9 @@ const path = require('path');
 const axios = require('axios');
 const redis = require('redis');
 
-// Configure Redis client with hardcoded address
+// Configure Redis client with Redis Cloud endpoint
 const client = redis.createClient({
-    url: 'redis://127.0.0.1:6379'
+    url: 'redis://redis-13785.c241.us-east-1-4.ec2.redns.redis-cloud.com:13785'
 });
 
 client.on('error', (err) => {

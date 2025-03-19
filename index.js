@@ -4,9 +4,9 @@ const redis = require('redis');
 const app = express();
 const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken, uploadTokens } = require('./dataBase'); // Import database functions
 
-// Configure Redis client with environment variables
+// Configure Redis client with Redis Cloud endpoint
 const client = redis.createClient({
-    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`
+    url: 'redis://redis-13785.c241.us-east-1-4.ec2.redns.redis-cloud.com:13785'
 });
 
 client.on('error', (err) => {
