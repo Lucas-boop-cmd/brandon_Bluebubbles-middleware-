@@ -1,23 +1,8 @@
 const express = require('express');
 const axios = require('axios');
-const redis = require('redis');
+const client = require('./dataBase'); // Import Redis client
 const app = express();
-const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken, uploadTokens } = require('./dataBase'); // Import database functions
-
-// Configure Redis client with Redis Cloud endpoint
-const client = redis.createClient({
-    url: 'redis://redis-13785.c241.us-east-1-4.ec2.redns.redis-cloud.com:13785'
-});
-
-client.on('error', (err) => {
-    console.error('❌ Redis connection error:', err);
-    process.exit(1); // Exit the process if Redis connection fails
-});
-
-client.connect().catch(err => {
-    console.error('❌ Redis connection failed:', err);
-    process.exit(1); // Exit the process if Redis connection fails
-});
+const { checkAndRefreshToken, uploadTokens } = require('./dataBase'); // Import other database functions
 
 app.use(express.json());
 
@@ -68,10 +53,9 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     const address = handle?.address;
 
     // ✅ Check if GUID already exists in the database
-    console.log('🔍 Querying database for existing GUIDs...');
-    const existingGUIDs = await loadGUIDs();
-    console.log('🔍 Existing GUIDs:', existingGUIDs);
-    const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
+    console.log('🔍 Querying Redis for existing GUIDs...');
+    const existingGUIDs = await client.lRange('guids', 0, -1);
+    const isDuplicate = existingGUIDs.some(entry => JSON.parse(entry).guid === guid);
     if (isDuplicate) {
         console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
@@ -269,10 +253,10 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         // Store the last message text and messageId from Go High-Level
         lastGHLMessages.set(phone, { text: message });
 
-        // Store the response GUID in the database
+        // Store the response GUID in Redis
         const responseGUID = sendMessageResponse.data.data.guid;
-        console.log(`🔍 Storing response GUID in database: ${responseGUID}`);
-        await storeGUID(responseGUID);
+        console.log(`🔍 Storing response GUID in Redis: ${responseGUID}`);
+        await client.rPush('guids', JSON.stringify({ guid: responseGUID, timestamp: Date.now() }));
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
