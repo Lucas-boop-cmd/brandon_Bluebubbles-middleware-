@@ -13,7 +13,6 @@ const client = createClient({
         port: 13785
     }
 });
-
 client.on('error', (err) => {
     console.error('❌ Redis Client Error:', err);
 });
@@ -22,30 +21,29 @@ client.connect().catch(err => {
     console.error('❌ Redis connection failed:', err);
     process.exit(1); // Exit the process if Redis connection fails
 });
-
 const filePath = path.join(__dirname, 'database.json');
 
 // Load existing GUIDs or return an empty array if file doesn’t exist
 async function loadGUIDs() {
-        const guids = await client.lRange('guids', 0, -1);
+    const guids = await client.lRange('guids', 0, -1);
     return guids.map(guid => JSON.parse(guid));
 }
 
 // Save GUIDs to Redis
 async function saveGUIDs(guids) {
-await client.del('guids');
+    await client.del('guids');
     for (const guid of guids) {
         await client.rPush('guids', JSON.stringify(guid));
-}
+    }
 }
 
 // Store a new GUID with timestamp
 async function storeGUID(guid) {
     const guids = await loadGUIDs();
-    const timestamp = Date.now(); 
+    const timestamp = Date.now();
 
     guids.push({ guid, timestamp });
-await saveGUIDs(guids);
+    await saveGUIDs(guids);
 }
 
 // Remove GUIDs older than 48 hours
@@ -54,7 +52,7 @@ async function cleanOldGUIDs() {
     const expiryTime = Date.now() - (48 * 60 * 60 * 1000);
 
     const filteredGUIDs = guids.filter(entry => entry.timestamp > expiryTime);
-await saveGUIDs(filteredGUIDs);
+    await saveGUIDs(filteredGUIDs);
 }
 
 // Automatically clean old GUIDs every 48 hours
