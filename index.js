@@ -1,7 +1,14 @@
 const express = require('express');
 const axios = require('axios');
+const redis = require('redis');
 const app = express();
 const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken, uploadTokens } = require('./dataBase'); // Import database functions
+
+// Configure Redis client with environment variables
+const client = redis.createClient({
+    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`
+});
+client.connect();
 
 app.use(express.json());
 

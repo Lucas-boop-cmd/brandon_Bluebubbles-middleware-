@@ -1,9 +1,13 @@
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const redis = require('redis');
 
-const client = redis.createClient();
+// Configure Redis client with environment variables
+const client = redis.createClient({
+    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`
+});
 client.connect();
 
 const filePath = path.join(__dirname, 'database.json');
