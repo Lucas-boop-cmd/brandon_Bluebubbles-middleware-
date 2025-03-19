@@ -13,7 +13,10 @@ client.on('error', (err) => {
     console.error('❌ Redis connection error:', err);
 });
 
-client.connect();
+client.connect().catch(err => {
+    console.error('❌ Redis connection failed:', err);
+    process.exit(1); // Exit the process if Redis connection fails
+});
 
 const filePath = path.join(__dirname, 'database.json');
 
