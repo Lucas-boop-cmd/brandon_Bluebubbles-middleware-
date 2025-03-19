@@ -8,7 +8,16 @@ const { storeGUID, loadGUIDs, loadTokens, checkAndRefreshToken, uploadTokens } =
 const client = redis.createClient({
     url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`
 });
-client.connect();
+
+client.on('error', (err) => {
+    console.error('❌ Redis connection error:', err);
+    process.exit(1); // Exit the process if Redis connection fails
+});
+
+client.connect().catch(err => {
+    console.error('❌ Redis connection failed:', err);
+    process.exit(1); // Exit the process if Redis connection fails
+});
 
 app.use(express.json());
 
