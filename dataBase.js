@@ -1,39 +1,43 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const redis = require('redis');
+
+const client = redis.createClient();
+client.connect();
 
 const filePath = path.join(__dirname, 'database.json');
 
 // Load existing GUIDs or return an empty array if file doesn’t exist
-function loadGUIDs() {
-    if (!fs.existsSync(filePath)) return [];
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    return data.guids || [];
+async function loadGUIDs() {
+    const guids = await client.lRange('guids', 0, -1);
+    return guids.map(guid => JSON.parse(guid));
 }
 
-// Save GUIDs back to the file
-function saveGUIDs(guids) {
-    const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
-    data.guids = guids;
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+// Save GUIDs to Redis
+async function saveGUIDs(guids) {
+    await client.del('guids');
+    for (const guid of guids) {
+        await client.rPush('guids', JSON.stringify(guid));
+    }
 }
 
 // Store a new GUID with timestamp
-function storeGUID(guid) {
-    const guids = loadGUIDs();
+async function storeGUID(guid) {
+    const guids = await loadGUIDs();
     const timestamp = Date.now(); 
 
     guids.push({ guid, timestamp });
-    saveGUIDs(guids);
+    await saveGUIDs(guids);
 }
 
 // Remove GUIDs older than 48 hours
-function cleanOldGUIDs() {
-    const guids = loadGUIDs();
+async function cleanOldGUIDs() {
+    const guids = await loadGUIDs();
     const expiryTime = Date.now() - (48 * 60 * 60 * 1000);
 
     const filteredGUIDs = guids.filter(entry => entry.timestamp > expiryTime);
-    saveGUIDs(filteredGUIDs);
+    await saveGUIDs(filteredGUIDs);
 }
 
 // Automatically clean old GUIDs every 48 hours
