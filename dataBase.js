@@ -4,9 +4,9 @@ const path = require('path');
 const axios = require('axios');
 const redis = require('redis');
 
-// Configure Redis client with environment variables
+// Configure Redis client with hardcoded address
 const client = redis.createClient({
-    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`
+    url: 'redis://127.0.0.1:6379'
 });
 
 client.on('error', (err) => {
