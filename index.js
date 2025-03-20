@@ -1,8 +1,7 @@
 const express = require('express');
 const axios = require('axios');
-const client = require('./dataBase'); // Import Redis client
+const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens } = require('./dataBase'); // Import loadTokens function
 const app = express();
-const { checkAndRefreshToken, uploadTokens } = require('./dataBase'); // Import other database functions
 
 app.use(express.json());
 
