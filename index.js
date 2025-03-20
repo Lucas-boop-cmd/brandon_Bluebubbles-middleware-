@@ -160,7 +160,13 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
     // Directly destructure the fields from req.body
-    const { phone, message, userId, conversationProviderId, messageId } = req.body;
+    const { phone, message, userId, conversationProviderId, messageId, type } = req.body;
+
+    // Filter to only process events of type SMS
+    if (type !== 'SMS') {
+        console.log("❌ Ignoring non-SMS event:", type);
+        return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
+    }
 
     if (!phone || !message || !userId || !messageId) {
         console.error("❌ Missing required fields in Go High-Level event:", req.body);
@@ -198,7 +204,8 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             const ghlResponse = await axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
-                    status: "delivered"
+                    status: "delivered",
+                    conversationProviderId: conversationProviderId // Ensure this is included
                 },
                 {
                     headers: {
