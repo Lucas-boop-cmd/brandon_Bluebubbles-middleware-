@@ -37,13 +37,16 @@ async function saveGUIDs(guids) {
     }
 }
 
-// Store a new GUID with timestamp
-async function storeGUID(guid) {
+// Store a new GUID with timestamp and handle address
+async function storeGUID(guid, handleAddress) {
     const guids = await loadGUIDs();
     const timestamp = Date.now();
 
-    guids.push({ guid, timestamp });
+    guids.push({ guid, timestamp, handleAddress });
     await saveGUIDs(guids);
+
+    // Create an index for searching GUIDs by handle address
+    await client.hSet('handle_index', handleAddress, JSON.stringify({ guid, timestamp }));
 }
 
 // Remove GUIDs older than 48 hours
