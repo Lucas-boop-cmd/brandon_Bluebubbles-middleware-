@@ -204,8 +204,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             const ghlResponse = await axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
-                    status: "delivered",
-                    conversationProviderId: conversationProviderId // Ensure this is included
+                    status: "delivered"
                 },
                 {
                     headers: {
