@@ -2,7 +2,9 @@ const express = require('express');
  const axios = require('axios');
  const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
  const app = express();
- 
+
+const conversationProviderId = '67dc4a38fd73f8e93e63b370';
+
  app.use(express.json());
  
  // Local variables for environment variables
@@ -124,7 +126,7 @@ const express = require('express');
                  `https://services.leadconnectorhq.com/conversations/messages/inbound`,
                  {
                      'type': 'Custom', 
-                     'conversationProviderId': '67d49af815d7f0f0116431cd',
+                     'conversationProviderId': 'conversationProviderId',
                      'conversationId': conversationId,
                      'message': text,
                      'direction': isFromMe ? 'outbound' : 'inbound',
@@ -266,35 +268,6 @@ const express = require('express');
          }
          res.status(500).json({ error: "Internal server error" });
      }
- });
- 
- // ✅ Webhook to Connect External Account (GET)
- app.get('/ghl/webhook', async (req, res) => {
-     console.log('📥 Received GET request for connecting external account:', req.query);
- 
-     // Destructure query parameters
-     const { client_id, scope, response_type, state, redirect_uri } = req.query;
- 
-     if (!client_id || !scope || !response_type || !state || !redirect_uri) {
-         console.error("❌ Missing required query parameters");
-         return res.status(400).json({ error: "Missing required query parameters" });
-     }
- 
-     console.log(`🔍 Received client_id: ${client_id}, scope: ${scope}, response_type: ${response_type}, state: ${state}, redirect_uri: ${redirect_uri}`);
- 
-     // Respond with the received query parameters and account details
-     res.status(200).json({
-         message: 'Account connected successfully',
-         account: {
-             name: 'Tru Rate Lending',
-             status: 'connected'
-         },
-         client_id,
-         scope,
-         response_type,
-         state,
-         redirect_uri
-     });
  });
  
  // Start the server
