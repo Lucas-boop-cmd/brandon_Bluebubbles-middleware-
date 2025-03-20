@@ -160,7 +160,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
     // Directly destructure the fields from req.body
-    const { phone, message, userId, conversationProviderId, messageId, type } = req.body;
+    const { phone, message, userId, messageId, type } = req.body;
 
     // Filter to only process events of type SMS
     if (type !== 'SMS') {
