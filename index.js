@@ -200,6 +200,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
+        console.log(`🔍 Using GHL_ACCESS_TOKEN: ${GHL_ACCESS_TOKEN}`); // Add this line
         try {
             const ghlResponse = await axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
