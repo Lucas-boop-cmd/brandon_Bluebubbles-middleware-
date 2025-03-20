@@ -155,4 +155,4 @@ function uploadTokens(accessToken, refreshToken) {
     console.log('✅ Tokens uploaded successfully');
 }
 
-module.exports = { storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };
+module.exports = { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };
