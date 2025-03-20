@@ -51,6 +51,12 @@ async function storeGUID(guid, handleAddress) {
     await client.hSet('handle_index', handleAddress, JSON.stringify({ guid, timestamp }));
 }
 
+// Function to search GUIDs by handle address
+async function searchGUIDsByHandleAddress(handleAddress) {
+    const guids = await loadGUIDs();
+    return guids.filter(entry => entry.handleAddress === handleAddress);
+}
+
 // Remove GUIDs older than 48 hours
 async function cleanOldGUIDs() {
     const guids = await loadGUIDs();
@@ -161,4 +167,13 @@ function uploadTokens(accessToken, refreshToken, locationId) {
     console.log('✅ Tokens uploaded successfully');
 }
 
-export { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };
+export { 
+    client, 
+    storeGUID, 
+    loadGUIDs, 
+    loadTokens, 
+    setGHLTokens, 
+    checkAndRefreshToken, 
+    uploadTokens,
+    searchGUIDsByHandleAddress // Add this line to export the function
+};
