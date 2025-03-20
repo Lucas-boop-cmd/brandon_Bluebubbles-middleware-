@@ -163,7 +163,7 @@ const conversationProviderId = '67dc4a38fd73f8e93e63b370';
      const { phone, message, userId, conversationProviderId, messageId } = req.body;
  
      // ✅ Filter events by conversation provider ID, userId, and phone
-     if (conversationProviderId !== '67d49af815d7f0f0116431cd') {
+     if (conversationProviderId !== '67dc4a38fd73f8e93e63b370') {
          return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
      }
  
