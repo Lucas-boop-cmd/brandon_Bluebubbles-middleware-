@@ -162,16 +162,6 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     // Directly destructure the fields from req.body
     const { phone, message, userId, conversationProviderId, messageId } = req.body;
 
-    // ✅ Filter events by conversation provider ID, userId, and phone
-    if (conversationProviderId !== '67dc4a38fd73f8e93e63b370') {
-        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported conversation provider' });
-    }
-
-    if (userId !== '36E2xrEV92vFl7b1fUJP') {
-        console.log("❌ Ignoring event from unsupported user:", userId);
-        return res.status(200).json({ status: 'ignored', message: 'Event from unsupported user' });
-    }
-
     if (!phone || !message || !userId || !messageId) {
         console.error("❌ Missing required fields in Go High-Level event:", req.body);
         if (!phone) console.error("❌ Missing field: phone");
