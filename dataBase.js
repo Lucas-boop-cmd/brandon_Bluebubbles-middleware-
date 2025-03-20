@@ -3,8 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import { createClient } from 'redis';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+// Get the directory name in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure Redis client with Redis Cloud endpoint and authentication
 const client = createClient({
