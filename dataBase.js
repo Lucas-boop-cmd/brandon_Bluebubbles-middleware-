@@ -1,8 +1,10 @@
-require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-const { createClient } = require('redis');
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
+import { createClient } from 'redis';
+
+dotenv.config();
 
 // Configure Redis client with Redis Cloud endpoint and authentication
 const client = createClient({
@@ -90,14 +92,15 @@ async function setGHLTokens(accessToken, refreshToken, locationId) {
 // Update the uploadTokens.js file with new tokens
 function updateUploadTokensFile(accessToken, refreshToken) {
     const content = `
-const { uploadTokens } = require('./dataBase');
+import { uploadTokens } from './dataBase.js';
 
 // Example tokens
 const accessToken = '${accessToken}';
 const refreshToken = '${refreshToken}';
 
 // Manually upload tokens
-uploadTokens(accessToken, refreshToken);
+const locationId = 'exampleLocationId'; // Replace with actual location ID
+uploadTokens(accessToken, refreshToken, locationId);
 `;
 
     fs.writeFileSync(path.join(__dirname, 'uploadTokens.js'), content);
@@ -158,4 +161,4 @@ function uploadTokens(accessToken, refreshToken, locationId) {
     console.log('✅ Tokens uploaded successfully');
 }
 
-module.exports = { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };
+export { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens };

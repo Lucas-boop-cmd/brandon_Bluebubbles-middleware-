@@ -1,6 +1,6 @@
-const express = require('express');
-const axios = require('axios');
-const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
+import express from 'express';
+import axios from 'axios';
+import { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } from './dataBase.js'; // Import client
 const app = express();
 
 app.use(express.json());
