@@ -180,27 +180,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
-        // ✅ Query for the handle to get the service
-        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
-        const handleResponse = await axios.get(
-            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
-        );
-
-        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
-
-        const service = handleResponse.data.data.service;
-
-        if (!service) {
-            console.log(`❌ No service found for phone number: ${phone}`);
-            return res.status(404).json({ error: "No service found for handle" });
-        }
-
-        // Manually construct the chat GUID
-        const chatGuid = `${service};-;${phone}`;
-        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
-
-        // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
+        // ✅ Update the status of the message in Go High-Level before querying for the handle
         console.log(`🔍 Using GHL_ACCESS_TOKEN: ${GHL_ACCESS_TOKEN}`); // Add this line
+        console.log(`🔍 Updating status for messageId: ${messageId}`); // Add this line
         try {
             const ghlResponse = await axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
@@ -227,6 +209,25 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
             return res.status(500).json({ error: "Internal server error" });
         }
+
+        // ✅ Query for the handle to get the service
+        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
+        const handleResponse = await axios.get(
+            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
+        );
+
+        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
+
+        const service = handleResponse.data.data.service;
+
+        if (!service) {
+            console.log(`❌ No service found for phone number: ${phone}`);
+            return res.status(404).json({ error: "No service found for handle" });
+        }
+
+        // Manually construct the chat GUID
+        const chatGuid = `${service};-;${phone}`;
+        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
         // ✅ Send the message to BlueBubbles
         const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
