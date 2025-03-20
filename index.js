@@ -1,6 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens } = require('./dataBase'); // Import loadTokens function
+const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
 const app = express();
 
 app.use(express.json());
