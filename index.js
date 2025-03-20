@@ -9,7 +9,7 @@ app.use(express.json());
 const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
 const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
 // Load tokens from the database
-let tokens = loadTokens();
+let tokens = await loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
 let tokenTimestamp = tokens.timestamp || 0;
 
@@ -79,73 +79,75 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
 
     try {
         // ✅ Find the corresponding contact in Go High-Level
-        const ghlContact = await axios.get(
-            `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
-            {
-                headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Version": "2021-04-15",
-                    "Accept": "application/json"
-                }
-            }
-        );
-
-        let contactId = ghlContact.data?.contacts?.[0]?.id;
-
-        // ✅ If contact does not exist, ignore
-        if (!contactId) {
-            console.log("❌ No existing contact found, ignoring message...");
-            return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
-        }
-
-        // ✅ Find the corresponding conversation in Go High-Level
-        const ghlConversation = await axios.get(
-            `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
-            {
-                headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Version": "2021-04-15",
-                    "Accept": "application/json"
-                }
-            }
-        );
-
-        let conversationId = ghlConversation.data?.conversations?.[0]?.id;
-
-        // ✅ If conversation does not exist, ignore
-        if (!conversationId) {
-            console.log("❌ No existing conversation found, ignoring message...");
-            return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
-        }
-
-        // ✅ Send the message to Go High-Level
-        try {
-            await axios.post(
-                `https://services.leadconnectorhq.com/conversations/messages/inbound`,
-                {
-                    'type': 'Custom', 
-                    'conversationProviderId': '67d49af815d7f0f0116431cd',
-                    'conversationId': conversationId,
-                    'message': text,
-                    'direction': isFromMe ? 'outbound' : 'inbound',
-                },
+        await checkTokenExpiration(req, res, async () => {
+            const ghlContact = await axios.get(
+                `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
                 {
                     headers: {
                         "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Content-Type": "application/json",
-                        "Version": "2021-04-15"
+                        "Version": "2021-04-15",
+                        "Accept": "application/json"
                     }
                 }
             );
 
-        } catch (error) {
-            console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
-            return res.status(500).json({ error: "Internal server error" });
-        }
+            let contactId = ghlContact.data?.contacts?.[0]?.id;
 
-        console.log("✅ Message successfully forwarded to Go High-Level!");
+            // ✅ If contact does not exist, ignore
+            if (!contactId) {
+                console.log("❌ No existing contact found, ignoring message...");
+                return res.status(200).json({ status: 'ignored', message: 'No existing contact found' });
+            }
 
-        res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
+            // ✅ Find the corresponding conversation in Go High-Level
+            const ghlConversation = await axios.get(
+                `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Version": "2021-04-15",
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            let conversationId = ghlConversation.data?.conversations?.[0]?.id;
+
+            // ✅ If conversation does not exist, ignore
+            if (!conversationId) {
+                console.log("❌ No existing conversation found, ignoring message...");
+                return res.status(200).json({ status: 'ignored', message: 'No existing conversation found' });
+            }
+
+            // ✅ Send the message to Go High-Level
+            try {
+                await axios.post(
+                    `https://services.leadconnectorhq.com/conversations/messages/inbound`,
+                    {
+                        'type': 'Custom', 
+                        'conversationProviderId': '67dc4a38fd73f8e93e63b370',
+                        'conversationId': conversationId,
+                        'message': text,
+                        'direction': isFromMe ? 'outbound' : 'inbound',
+                    },
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                            "Content-Type": "application/json",
+                            "Version": "2021-04-15"
+                        }
+                    }
+                );
+
+            } catch (error) {
+                console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
+                return res.status(500).json({ error: "Internal server error" });
+            }
+
+            console.log("✅ Message successfully forwarded to Go High-Level!");
+
+            res.status(200).json({ status: 'success', message: 'Message forwarded to GHL' });
+        });
 
     } catch (error) {
         console.error("❌ Error processing BlueBubbles message:", error.response ? error.response.data : error.message);
@@ -203,27 +205,29 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
 
         // ✅ Update the status of the message in Go High-Level before forwarding to BlueBubbles
         try {
-            const ghlResponse = await axios.put(
-                `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
-                {
-                    status: "delivered"
-                },
-                {
-                    headers: {
-                        "Accept": "application/json",
-                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Content-Type": "application/json",
-                        "Version": "2021-04-15"
+            await checkTokenExpiration(req, res, async () => {
+                const ghlResponse = await axios.put(
+                    `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+                    {
+                        status: "delivered"
+                    },
+                    {
+                        headers: {
+                            "Accept": "application/json",
+                            "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                            "Content-Type": "application/json",
+                            "Version": "2021-04-15"
+                        }
                     }
-                }
-            );
+                );
 
-            if (ghlResponse.status === 200) {
-                console.log("✅ Message status updated in Go High-Level!", ghlResponse.data, messageId);
-            } else {
-                console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
-                return res.status(500).json({ error: "Failed to update message status in GHL" });
-            }
+                if (ghlResponse.status === 200) {
+                    console.log("✅ Message status updated in Go High-Level!", ghlResponse.data, messageId);
+                } else {
+                    console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
+                    return res.status(500).json({ error: "Failed to update message status in GHL" });
+                }
+            });
         } catch (error) {
             console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
             return res.status(500).json({ error: "Internal server error" });

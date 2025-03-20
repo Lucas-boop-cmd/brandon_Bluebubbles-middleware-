@@ -61,10 +61,10 @@ async function cleanOldGUIDs() {
 // Automatically clean old GUIDs every 48 hours
 setInterval(cleanOldGUIDs, 48 * 60 * 60 * 1000);
 
-// Load tokens from the database
-function loadTokens() {
-    if (!fs.existsSync(filePath)) return {};
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')).tokens || {};
+// Load tokens from Redis based on location ID
+async function loadTokens(locationId) {
+    const tokens = await client.hGet('ghl_tokens', locationId);
+    return tokens ? JSON.parse(tokens) : {};
 }
 
 // Save tokens to the database
@@ -74,15 +74,17 @@ function saveTokens(tokens) {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-// Manually set GHL tokens with timestamp
-function setGHLTokens(accessToken, refreshToken) {
+// Manually set GHL tokens with timestamp and location ID
+async function setGHLTokens(accessToken, refreshToken, locationId) {
     const timestamp = Date.now();
     const tokens = {
         GHL_ACCESS_TOKEN: accessToken,
         GHL_REFRESH_TOKEN: refreshToken,
-        timestamp
+        timestamp,
+        locationId
     };
-    saveTokens(tokens);
+    await client.hSet('ghl_tokens', locationId, JSON.stringify(tokens));
+    await client.expire('ghl_tokens', 18 * 60 * 60); // Set expiration to 18 hours
 }
 
 // Update the uploadTokens.js file with new tokens
@@ -102,10 +104,10 @@ uploadTokens(accessToken, refreshToken);
 }
 
 // Check token expiration and refresh if needed
-async function checkAndRefreshToken() {
-    const tokens = loadTokens();
+async function checkAndRefreshToken(locationId) {
+    const tokens = await loadTokens(locationId);
     const tokenTimestamp = tokens.timestamp || 0;
-    const TOKEN_REFRESH_INTERVAL = 20 * 60 * 60 * 1000; // 20 hours
+    const TOKEN_REFRESH_INTERVAL = 18 * 60 * 60 * 1000; // 18 hours
 
     if (Date.now() - tokenTimestamp >= TOKEN_REFRESH_INTERVAL) {
         const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN;
@@ -133,7 +135,8 @@ async function checkAndRefreshToken() {
             const newGHL_REFRESH_TOKEN = response.data.refresh_token;
             const newTimestamp = Date.now();
 
-            setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
+            // Save the new tokens to Redis
+            await setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN, locationId);
 
             // Update the uploadTokens.js file with new tokens
             updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
@@ -150,8 +153,8 @@ async function checkAndRefreshToken() {
 }
 
 // Function to manually upload tokens into the database
-function uploadTokens(accessToken, refreshToken) {
-    setGHLTokens(accessToken, refreshToken);
+function uploadTokens(accessToken, refreshToken, locationId) {
+    setGHLTokens(accessToken, refreshToken, locationId);
     console.log('✅ Tokens uploaded successfully');
 }
 
