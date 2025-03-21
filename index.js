@@ -187,12 +187,9 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
             const ghlResponse = await axios.put(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
-                    headers: {
-                        "Accept": "application/json",
+                    headers: {                       
                         "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Content-Type": "application/json",
                         "Version": "2021-04-15",
-                        "User-Agent": "YourAppName/1.0" // Add User-Agent header
                     },
                     data: {
                         status: "delivered"
