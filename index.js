@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const fetch = require('node-fetch'); // Add this line
 const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
 const app = express();
 
@@ -184,29 +185,30 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         console.log(`🔍 Using GHL_ACCESS_TOKEN: ${GHL_ACCESS_TOKEN}`); // Add this line
         console.log(`🔍 Updating status for messageId: ${messageId}`); // Add this line
         try {
-            const ghlResponse = await axios.put(
+            const ghlResponse = await fetch(
                 `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
                 {
-                    status: "delivered"
-                },
-                {
+                    method: 'PUT',
                     headers: {
                         "Accept": "application/json",
                         "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
                         "Content-Type": "application/json",
                         "Version": "2021-04-15"
-                    }
+                    },
+                    body: JSON.stringify({ status: "delivered" })
                 }
             );
 
-            if (ghlResponse.status === 200) {
-                console.log("✅ Message status updated in Go High-Level!", ghlResponse.data, messageId);
+            if (ghlResponse.ok) {
+                const responseData = await ghlResponse.json();
+                console.log("✅ Message status updated in Go High-Level!", responseData, messageId);
             } else {
-                console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
+                const errorData = await ghlResponse.json();
+                console.error("❌ Failed to update message status in Go High-Level:", errorData);
                 return res.status(500).json({ error: "Failed to update message status in GHL" });
             }
         } catch (error) {
-            console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
+            console.error("❌ Error updating message status in Go High-Level:", error.message);
             return res.status(500).json({ error: "Internal server error" });
         }
 
