@@ -155,7 +155,7 @@ async function searchGUIDsByHandleAddress(handleAddress) {
         throw new TypeError('Invalid argument type');
     }
     const guids = await client.hGet('handle_index', handleAddress);
-    return guids ? [JSON.parse(guids)] : [];
+    return guids ? JSON.parse(guids) : [];
 }
 
 // Schedule a cron job to refresh tokens at 8 am every morning Eastern Time
