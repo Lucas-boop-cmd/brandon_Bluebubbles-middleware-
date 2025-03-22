@@ -47,8 +47,9 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     // ✅ Check if GUID already exists in the database based on handle address
     console.log('🔍 Querying Redis for existing GUIDs by handle address...');
-    const existingGUID = await searchGUIDsByHandleAddress(address);
-    if (existingGUID && existingGUID.guid === guid) {
+    const existingGUIDs = await searchGUIDsByHandleAddress(address);
+    const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
+    if (isDuplicate) {
         console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
     }
