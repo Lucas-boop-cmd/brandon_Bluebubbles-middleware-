@@ -221,6 +221,9 @@ app.post('/ghl/webhook', async (req, res) => {
         console.log(`🔍 Storing response GUID in Redis: ${responseGUID}`);
         await client.rPush('guids', JSON.stringify({ guid: responseGUID, timestamp: Date.now() }));
 
+        // ✅ Wait for 1.5 seconds before updating the status of the message in Go High-Level
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // ✅ Update the status of the message in Go High-Level after forwarding to BlueBubbles
         try {
             const ghlResponse = await axios.put(
