@@ -189,6 +189,7 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
                 {
                     headers: {
                         "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Content-Type": "application/json",
                         "Version": "2021-04-15"
                     },
                     data: {
