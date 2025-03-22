@@ -86,28 +86,12 @@ function setGHLTokens(accessToken, refreshToken) {
     saveTokens(tokens);
 }
 
-// Update the uploadTokens.js file with new tokens
-function updateUploadTokensFile(accessToken, refreshToken) {
-    const content = `
-const { uploadTokens } = require('./dataBase');
-
-// Example tokens
-const accessToken = '${accessToken}';
-const refreshToken = '${refreshToken}';
-
-// Manually upload tokens
-uploadTokens(accessToken, refreshToken);
-`;
-
-    fs.writeFileSync(path.join(__dirname, 'uploadTokens.js'), content);
-}
-
 // Check token expiration and refresh if needed
 async function checkAndRefreshToken() {
     const tokens = loadTokens();
     const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN;
-    const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
-    const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
+    const CLIENT_ID = process.env.GHL_CLIENT_ID;
+    const GHL_CLIENT_SECRET = process.env.GHL_CLIENT_SECRET;
 
     try {
         const response = await axios.post(
@@ -132,21 +116,12 @@ async function checkAndRefreshToken() {
 
         setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
 
-        // Update the uploadTokens.js file with new tokens
-        updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
-
         console.log('✅ GHL API token refreshed successfully');
         return { GHL_ACCESS_TOKEN, tokenTimestamp: newTimestamp };
     } catch (error) {
         console.error('❌ Error refreshing GHL API token:', error.response ? error.response.data : error.message);
         throw error;
     }
-}
-
-// Function to manually upload tokens into the database
-function uploadTokens(accessToken, refreshToken) {
-    setGHLTokens(accessToken, refreshToken);
-    console.log('✅ Tokens uploaded successfully');
 }
 
 // Search GUIDs by handle address
@@ -170,4 +145,15 @@ cron.schedule('0 8 * * *', async () => {
     timezone: "America/New_York"
 });
 
-module.exports = { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress };
+module.exports = { 
+    client, 
+    storeGUID, 
+    loadGUIDs, 
+    saveGUIDs, 
+    cleanOldGUIDs, 
+    loadTokens, 
+    saveTokens, 
+    setGHLTokens, 
+    checkAndRefreshToken, 
+    searchGUIDsByHandleAddress 
+};

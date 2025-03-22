@@ -1,21 +1,25 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { uploadTokens, searchGUIDsByHandleAddress, loadTokens, storeGUID, client } = require('./dataBase'); // Import storeGUID
+const { 
+    client, 
+    storeGUID, 
+    loadTokens,  
+} = require('./dataBase');
 const app = express();
 
-const conversationProviderId = '67dc4a38fd73f8e93e63b370';
+const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
 
 app.use(express.json());
 
 // Local variables for environment variables
-const BLUEBUBBLES_API_URL = 'http://myimessage.hopto.org:1234';
-const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
+const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
+const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
 // Load tokens from the database
 let tokens = loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
 
-const LocationId = 'h4BWchNdy6Wykng1FfTH';
+const LocationId = process.env.LOCATION_ID;
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
