@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
+const { uploadTokens, searchGUIDsByHandleAddress, loadTokens, storeGUID, client } = require('./dataBase'); // Import storeGUID
 const app = express();
 
 const conversationProviderId = '67dc4a38fd73f8e93e63b370';
@@ -130,6 +130,9 @@ app.post('/bluebubbles/events', async (req, res) => {
                     }
                 }
             );
+
+            // ✅ Store the new GUID in the database
+            await storeGUID(guid, address);
 
         } catch (error) {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
