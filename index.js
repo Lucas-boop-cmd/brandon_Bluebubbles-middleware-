@@ -1,6 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const { checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
+const { uploadTokens, searchGUIDsByHandleAddress, loadTokens, client } = require('./dataBase'); // Import client
 const app = express();
 
 const conversationProviderId = '67dc4a38fd73f8e93e63b370';
@@ -13,20 +13,11 @@ const BLUEBUBBLES_PASSWORD = 'Dasfad1234$';
 // Load tokens from the database
 let tokens = loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
-let tokenTimestamp = tokens.timestamp || 0;
 
 const LocationId = 'h4BWchNdy6Wykng1FfTH';
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
-
-// Middleware to check token expiration before API calls
-async function checkTokenExpiration(req, res, next) {
-    const { GHL_ACCESS_TOKEN: newAccessToken, tokenTimestamp: newTokenTimestamp } = await checkAndRefreshToken();
-    GHL_ACCESS_TOKEN = newAccessToken;
-    tokenTimestamp = newTokenTimestamp;
-    next();
-}
 
 // Endpoint to manually upload tokens
 app.post('/upload-tokens', (req, res) => {
@@ -39,7 +30,7 @@ app.post('/upload-tokens', (req, res) => {
 });
 
 // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
-app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
+app.post('/bluebubbles/events', async (req, res) => {
     console.log('📥 Received BlueBubbles event:', req.body);
 
     const { type, data } = req.body;
@@ -53,11 +44,10 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
-    // ✅ Check if GUID already exists in the database
-    console.log('🔍 Querying Redis for existing GUIDs...');
-    const existingGUIDs = await client.lRange('guids', 0, -1);
-    const isDuplicate = existingGUIDs.some(entry => JSON.parse(entry).guid === guid);
-    if (isDuplicate) {
+    // ✅ Check if GUID already exists in the database based on handle address
+    console.log('🔍 Querying Redis for existing GUIDs by handle address...');
+    const existingGUID = await searchGUIDsByHandleAddress(address);
+    if (existingGUID && existingGUID.guid === guid) {
         console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
     }
@@ -156,7 +146,7 @@ app.post('/bluebubbles/events', checkTokenExpiration, async (req, res) => {
 });
 
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles (POST)
-app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
+app.post('/ghl/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
     // Directly destructure the fields from req.body
