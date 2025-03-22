@@ -151,6 +151,9 @@ function uploadTokens(accessToken, refreshToken) {
 
 // Search GUIDs by handle address
 async function searchGUIDsByHandleAddress(handleAddress) {
+    if (typeof handleAddress !== 'string') {
+        throw new TypeError('Invalid argument type');
+    }
     const guids = await client.hGet('handle_index', handleAddress);
     return guids ? JSON.parse(guids) : null;
 }
