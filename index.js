@@ -183,32 +183,32 @@ app.post('/ghl/webhook', checkTokenExpiration, async (req, res) => {
         // ✅ Update the status of the message in Go High-Level before querying for the handle
         console.log(`🔍 Using GHL_ACCESS_TOKEN: ${GHL_ACCESS_TOKEN}`); // Add this line
         console.log(`🔍 Updating status for messageId: ${messageId}`); // Add this line
-        try {
-            const ghlResponse = await axios.put(
-                `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
-                {
-                        "status": "delivered"
-                },
-                {
+        // try {
+        //     const ghlResponse = await axios.put(
+        //         `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+        //         {
+        //                 "status": "delivered"
+        //         },
+        //         {
 
-                    headers: {
-                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                        "Content-Type": "application/json",
-                        "Version": "2021-04-15"
-                    }
-                }
-            );
+        //             headers: {
+        //                 "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+        //                 "Version": "2021-04-15",
+        //                 "Accept": "application/json"
+        //             }
+        //         }
+        //     );
 
-            if (ghlResponse.status === 200) {
-                console.log("✅ Message status updated in Go High-Level!!", ghlResponse.data, messageId);
-            } else {
-                console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
-                return res.status(500).json({ error: "Failed to update message status in GHL" });
-            }
-        } catch (error) {
-            console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
-            return res.status(500).json({ error: "Internal server error" });
-        }
+        //     if (ghlResponse.status === 200) {
+        //         console.log("✅ Message status updated in Go High-Level!!", ghlResponse.data, messageId);
+        //     } else {
+        //         console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
+        //         return res.status(500).json({ error: "Failed to update message status in GHL" });
+        //     }
+        // } catch (error) {
+        //     console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
+        //     return res.status(500).json({ error: "Internal server error" });
+        // }
 
         // ✅ Query for the handle to get the service
         console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
