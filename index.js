@@ -222,7 +222,7 @@ app.post('/ghl/webhook', async (req, res) => {
         await client.rPush('guids', JSON.stringify({ guid: responseGUID, timestamp: Date.now() }));
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
-        
+
 
         // ✅ Update the status of the message in Go High-Level after forwarding to BlueBubbles
         try {
@@ -250,8 +250,6 @@ app.post('/ghl/webhook', async (req, res) => {
             console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
             return res.status(500).json({ error: "Internal server error" });
         }
-
-        res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
     } catch (error) {
         console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
