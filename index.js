@@ -5,7 +5,6 @@ const {
     client, 
     storeGUID, 
 } = require('./dataBase');
-
 const app = express();
 
 const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
