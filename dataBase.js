@@ -115,9 +115,5 @@ module.exports = {
     loadGUIDs, 
     saveGUIDs, 
     cleanOldGUIDs, 
-    loadTokens, 
-    saveTokens, 
-    setGHLTokens, 
-    RefreshToken, 
     searchGUIDsByHandleAddress 
 };

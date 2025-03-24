@@ -4,14 +4,16 @@ const axios = require('axios');
 const { 
     client, 
     storeGUID, 
-    loadTokens, 
 } = require('./dataBase');
+
 const app = express();
+
 const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
+
 app.use(express.json());
+
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
-let tokens = loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
 const LocationId = process.env.LOCATION_ID;
 
