@@ -14,21 +14,11 @@ app.use(express.json());
 
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
-let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
+let GHL_ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN;
 const LocationId = process.env.LOCATION_ID;
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
-
-// Endpoint to manually upload tokens
-app.post('/upload-tokens', (req, res) => {
-    const { accessToken, refreshToken } = req.body;
-    if (!accessToken || !refreshToken) {
-        return res.status(400).json({ error: 'Missing access token or refresh token' });
-    }
-    uploadTokens(accessToken, refreshToken);
-    res.status(200).json({ status: 'success', message: 'Tokens uploaded successfully' });
-});
 
 // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
