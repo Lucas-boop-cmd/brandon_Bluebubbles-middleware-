@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { createClient } = require('redis');
-const cron = require('node-cron'); // Add this line to import node-cron
+const cron = require('node-cron');
 
 // Configure Redis client with Redis Cloud endpoint and authentication
 const client = createClient({
@@ -62,42 +62,23 @@ async function cleanOldGUIDs() {
 // Automatically clean old GUIDs every 48 hours
 setInterval(cleanOldGUIDs, 48 * 60 * 60 * 1000);
 
-// Load tokens from the database
-function loadTokens() {
-    if (!fs.existsSync(filePath)) return {};
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')).tokens || {};
-}
-
-// Save tokens to the database
-function saveTokens(tokens) {
-    const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
-    data.tokens = tokens;
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
-
-// Manually set GHL tokens with timestamp
-function setGHLTokens(accessToken, refreshToken) {
-    const timestamp = Date.now();
-    const tokens = {
-        GHL_ACCESS_TOKEN: accessToken,
-        GHL_REFRESH_TOKEN: refreshToken,
-        timestamp
-    };
-    saveTokens(tokens);
+// Search GUIDs by handle address
+async function searchGUIDsByHandleAddress(handleAddress) {
+    if (typeof handleAddress !== 'string') {
+        throw new TypeError('Invalid argument type');
+    }
+    const guids = await client.hGet('handle_index', handleAddress);
+    return guids ? [JSON.parse(guids)] : [];
 }
 
 // Check token expiration and refresh if needed
-async function checkAndRefreshToken() {
-    const tokens = loadTokens();
-    const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN;
-    const CLIENT_ID = process.env.GHL_CLIENT_ID;
-    const GHL_CLIENT_SECRET = process.env.GHL_CLIENT_SECRET;
+async function RefreshTokens() {
 
     try {
         const response = await axios.post(
             'https://services.leadconnectorhq.com/oauth/token',
             {
-                client_id: CLIENT_ID,
+                client_id: GHL_CLIENT_ID,
                 client_secret: GHL_CLIENT_SECRET,
                 grant_type: 'refresh_token',
                 refresh_token: GHL_REFRESH_TOKEN,
@@ -110,40 +91,23 @@ async function checkAndRefreshToken() {
             }
         );
 
-        const GHL_ACCESS_TOKEN = response.data.access_token;
-        const newGHL_REFRESH_TOKEN = response.data.refresh_token;
-        const newTimestamp = Date.now();
+        process.env.GHL_ACCESS_TOKEN = response.data.access_token;
+        process.env.GHL_REFRESH_TOKEN = response.data.refresh_token;
 
-        setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
-
-        console.log('✅ GHL API token refreshed successfully');
-        return { GHL_ACCESS_TOKEN, tokenTimestamp: newTimestamp };
+        console.log(`✅ GHL API token refreshed successfully at ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })}`);
     } catch (error) {
         console.error('❌ Error refreshing GHL API token:', error.response ? error.response.data : error.message);
-        throw error;
     }
 }
-
-// Search GUIDs by handle address
-async function searchGUIDsByHandleAddress(handleAddress) {
-    if (typeof handleAddress !== 'string') {
-        throw new TypeError('Invalid argument type');
-    }
-    const guids = await client.hGet('handle_index', handleAddress);
-    return guids ? [JSON.parse(guids)] : [];
-}
-
 // Schedule a cron job to refresh tokens at 8 am every morning Eastern Time
 cron.schedule('0 8 * * *', async () => {
-    try {
-        await checkAndRefreshToken();
-        console.log('✅ Tokens refreshed successfully by cron job');
-    } catch (error) {
-        console.error('❌ Error refreshing tokens by cron job:', error);
-    }
+    console.log('🔄 Running scheduled token refresh...');
+    await RefreshTokens();
 }, {
     timezone: "America/New_York"
 });
+
+console.log('⏳ Token refresh cron job scheduled for 8:00 AM Eastern Time');
 
 module.exports = { 
     client, 
@@ -154,6 +118,6 @@ module.exports = {
     loadTokens, 
     saveTokens, 
     setGHLTokens, 
-    checkAndRefreshToken, 
+    RefreshToken, 
     searchGUIDsByHandleAddress 
 };
