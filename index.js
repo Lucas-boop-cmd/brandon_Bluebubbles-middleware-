@@ -1,23 +1,34 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { 
-    client, 
-    storeGUID, 
-} = require('./dataBase');
+const { uploadTokens, loadTokens, storeGUID, client } = require('./dataBase'); // Import storeGUID
 const app = express();
 
 const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
 
 app.use(express.json());
 
+// Local variables for environment variables
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
-let GHL_ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN;
+// Load tokens from the database
+let tokens = loadTokens();
+let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
+
 const LocationId = process.env.LOCATION_ID;
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
+
+// Endpoint to manually upload tokens
+app.post('/upload-tokens', (req, res) => {
+    const { accessToken, refreshToken } = req.body;
+    if (!accessToken || !refreshToken) {
+        return res.status(400).json({ error: 'Missing access token or refresh token' });
+    }
+    uploadTokens(accessToken, refreshToken);
+    res.status(200).json({ status: 'success', message: 'Tokens uploaded successfully' });
+});
 
 // ✅ Webhook to Receive Messages from BlueBubbles and Forward to Go High-Level
 app.post('/bluebubbles/events', async (req, res) => {
@@ -50,6 +61,12 @@ app.post('/bluebubbles/events', async (req, res) => {
         if (!address) console.error("❌ Missing field: address");
         if (!originalROWID) console.error("❌ Missing field: originalROWID");
         return res.status(200).json({ status: 'ignored', message: 'Missing required fields' });
+    }
+
+    // Check if the last Go High-Level message equals the current BlueBubbles event text
+    if (lastGHLMessages.get(address) === text) {
+        console.log('❌ Duplicate message from GHL detected, ignoring...');
+        return res.status(200).json({ status: 'ignored', message: 'Duplicate message from GHL' });
     }
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);

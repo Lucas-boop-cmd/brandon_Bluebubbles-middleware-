@@ -1,7 +1,9 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const { createClient } = require('redis');
+const cron = require('node-cron'); // Add this line to import node-cron
 
 // Configure Redis client with Redis Cloud endpoint and authentication
 const client = createClient({
@@ -36,20 +38,115 @@ async function saveGUIDs(guids) {
     }
 }
 
-// Store a new GUID with handle address
+// Store a new GUID with timestamp and handle address
 async function storeGUID(guid, handleAddress) {
     const guids = await loadGUIDs();
-    guids.push({ guid, handleAddress });
+    const timestamp = Date.now();
+
+    guids.push({ guid, timestamp, handleAddress });
     await saveGUIDs(guids);
 
-    const value = JSON.stringify({ guid, handleAddress });
-    
-    // Use multi() to execute commands atomically
-    await client.multi()
-        .hSet('handle_index', handleAddress, value)  // Store the mapping
-        .expire('handle_index', 172800)                // Expire in 48 hours
-        .expire('guids', 172800)                       // Expire the list in 48 hours
-        .exec();
+    // Create an index for searching GUIDs by handle address
+    await client.hSet('handle_index', handleAddress, JSON.stringify({ guid, timestamp }));
+}
+
+// Remove GUIDs older than 48 hours
+async function cleanOldGUIDs() {
+    const guids = await loadGUIDs();
+    const expiryTime = Date.now() - (48 * 60 * 60 * 1000);
+
+    const filteredGUIDs = guids.filter(entry => entry.timestamp > expiryTime);
+    await saveGUIDs(filteredGUIDs);
+}
+
+// Automatically clean old GUIDs every 48 hours
+setInterval(cleanOldGUIDs, 48 * 60 * 60 * 1000);
+
+// Load tokens from the database
+function loadTokens() {
+    if (!fs.existsSync(filePath)) return {};
+    return JSON.parse(fs.readFileSync(filePath, 'utf8')).tokens || {};
+}
+
+// Save tokens to the database
+function saveTokens(tokens) {
+    const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
+    data.tokens = tokens;
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+// Manually set GHL tokens with timestamp
+function setGHLTokens(accessToken, refreshToken) {
+    const timestamp = Date.now();
+    const tokens = {
+        GHL_ACCESS_TOKEN: accessToken,
+        GHL_REFRESH_TOKEN: refreshToken,
+        timestamp
+    };
+    saveTokens(tokens);
+}
+
+// Update the uploadTokens.js file with new tokens
+function updateUploadTokensFile(accessToken, refreshToken) {
+    const content = `
+const { uploadTokens } = require('./dataBase');
+
+// Example tokens
+const accessToken = '${accessToken}';
+const refreshToken = '${refreshToken}';
+
+// Manually upload tokens
+uploadTokens(accessToken, refreshToken);
+`;
+
+    fs.writeFileSync(path.join(__dirname, 'uploadTokens.js'), content);
+}
+
+// Check token expiration and refresh if needed
+async function checkAndRefreshToken() {
+    const tokens = loadTokens();
+    const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN;
+    const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
+    const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
+
+    try {
+        const response = await axios.post(
+            'https://services.leadconnectorhq.com/oauth/token',
+            {
+                client_id: CLIENT_ID,
+                client_secret: GHL_CLIENT_SECRET,
+                grant_type: 'refresh_token',
+                refresh_token: GHL_REFRESH_TOKEN,
+                user_type: 'Location'
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const GHL_ACCESS_TOKEN = response.data.access_token;
+        const newGHL_REFRESH_TOKEN = response.data.refresh_token;
+        const newTimestamp = Date.now();
+
+        setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
+
+        // Update the uploadTokens.js file with new tokens
+        updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
+
+        console.log('✅ GHL API token refreshed successfully');
+        return { GHL_ACCESS_TOKEN, tokenTimestamp: newTimestamp };
+    } catch (error) {
+        console.error('❌ Error refreshing GHL API token:', error.response ? error.response.data : error.message);
+        throw error;
+    }
+}
+
+// Function to manually upload tokens into the database
+function uploadTokens(accessToken, refreshToken) {
+    setGHLTokens(accessToken, refreshToken);
+    console.log('✅ Tokens uploaded successfully');
 }
 
 // Search GUIDs by handle address
@@ -61,10 +158,16 @@ async function searchGUIDsByHandleAddress(handleAddress) {
     return guids ? [JSON.parse(guids)] : [];
 }
 
-module.exports = { 
-    client, 
-    storeGUID, 
-    loadGUIDs, 
-    saveGUIDs, 
-    searchGUIDsByHandleAddress 
-};
+// Schedule a cron job to refresh tokens at 8 am every morning Eastern Time
+cron.schedule('0 8 * * *', async () => {
+    try {
+        await checkAndRefreshToken();
+        console.log('✅ Tokens refreshed successfully by cron job');
+    } catch (error) {
+        console.error('❌ Error refreshing tokens by cron job:', error);
+    }
+}, {
+    timezone: "America/New_York"
+});
+
+module.exports = { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress };

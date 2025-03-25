@@ -1,6 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const cron = require('node-cron');
+const fs = require('fs'); 
 
 // Check token expiration and refresh if needed
 async function RefreshTokens() {
@@ -9,10 +10,10 @@ async function RefreshTokens() {
         const response = await axios.post(
             'https://services.leadconnectorhq.com/oauth/token',
             {
-                client_id: GHL_CLIENT_ID,
-                client_secret: GHL_CLIENT_SECRET,
+                client_id: process.env.GHL_CLIENT_ID,
+                client_secret: process.env.GHL_CLIENT_SECRET,
                 grant_type: 'refresh_token',
-                refresh_token: GHL_REFRESH_TOKEN,
+                refresh_token: process.env.GHL_REFRESH_TOKEN,
                 user_type: 'Location'
             },
             {
@@ -24,6 +25,11 @@ async function RefreshTokens() {
 
         process.env.GHL_ACCESS_TOKEN = response.data.access_token;
         process.env.GHL_REFRESH_TOKEN = response.data.refresh_token;
+
+         // Update the .env file on disk
+         const envContent = `GHL_ACCESS_TOKEN=${response.data.access_token}\nGHL_REFRESH_TOKEN=${response.data.refresh_token}\n`;
+         fs.writeFileSync('.env', envContent);
+ 
 
         console.log(`✅ GHL API token refreshed successfully at ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })}`);
     } catch (error) {
