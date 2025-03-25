@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { uploadTokens, loadTokens, storeGUID, client } = require('./dataBase'); // Import storeGUID
+const { uploadTokens, storeGUID, client } = require('./dataBase'); // Import storeGUID
 const app = express();
 
 const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
@@ -11,11 +11,10 @@ app.use(express.json());
 // Local variables for environment variables
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
-// Load tokens from the database
-let tokens = loadTokens();
-let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
-
 const LocationId = process.env.LOCATION_ID;
+const GHL_ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN;
+
+
 
 // Store to keep track of the last message text from Go High-Level
 const lastGHLMessages = new Map();
