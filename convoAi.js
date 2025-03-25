@@ -30,16 +30,15 @@ app.post('/ghl/webhook', async (req, res) => {
 
     try {
         // Fetch opportunities for the contact
-        const opportunitiesResponse = await axios.get(
-            `https://services.leadconnectorhq.com/opportunities/search?location_id=${process.env.LOCATION_ID}&contact_id=${contactId}`,
-            {
-                headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                    "Version": "2021-07-28",
-                    "Accept": "application/json"
-                }
+        const opportunitiesUrl = `https://services.leadconnectorhq.com/opportunities/search?location_id=${process.env.LOCATION_ID}&contact_id=${contactId}`;
+        console.log("Opportunities URL:", opportunitiesUrl); // Add this line
+        const opportunitiesResponse = await axios.get(opportunitiesUrl, {
+            headers: {
+                "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                "Version": "2021-07-28",
+                "Accept": "application/json"
             }
-        );
+        });
 
         const opportunities = opportunitiesResponse.data.opportunities || [];
 
@@ -76,23 +75,23 @@ app.post('/ghl/webhook', async (req, res) => {
         console.log(`✅ Contact phone number: ${contactPhone}`);
 
         // ✅ Query for the handle to get the service
-                console.log(`🔍 Querying BlueBubbles for handle with phone: ${contactPhone}`);
-                const handleResponse = await axios.get(
-                    `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(contactPhone)}?password=${BLUEBUBBLES_PASSWORD}`
-                );
-        
-                console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
-        
-                const service = handleResponse.data.data.service;
-        
-                if (!service) {
-                    console.log(`❌ No service found for phone number: ${contactPhone}`);
-                    return res.status(404).json({ error: "No service found for handle" });
-                }
-        
-                // Manually construct the chat GUID
-                const chatGuid = `${service};-;${contactPhone}`;
-                console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${contactPhone}`);
+        console.log(`🔍 Querying BlueBubbles for handle with phone: ${contactPhone}`);
+        const handleUrl = `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(contactPhone)}?password=${BLUEBUBBLES_PASSWORD}`;
+        console.log("BlueBubbles Handle URL:", handleUrl); // Log the URL
+        const handleResponse = await axios.get(handleUrl);
+
+        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
+
+        const service = handleResponse.data.data.service;
+
+        if (!service) {
+            console.log(`❌ No service found for phone number: ${contactPhone}`);
+            return res.status(404).json({ error: "No service found for handle" });
+        }
+
+        // Manually construct the chat GUID
+        const chatGuid = `${service};-;${contactPhone}`;
+        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${contactPhone}`);
 
         // ✅ Mark chat as read in BlueBubbles
         console.log(`🔍 Marking chat as read in BlueBubbles with GUID: ${chatGuid}`);
@@ -128,7 +127,16 @@ app.post('/ghl/webhook', async (req, res) => {
         res.status(200).json({ status: 'success', message: 'Chat marked as read and typing indicator sent to BlueBubbles' });
 
     } catch (error) {
-        console.error("❌ Error fetching opportunities:", error.response ? error.response.data : error.message);
+        console.error("❌ Error fetching opportunities:", error);
+        if (error.response) {
+            console.error("❌ Response data:", error.response.data);
+            console.error("❌ Response status:", error.response.status);
+            console.error("❌ Response headers:", error.response.headers);
+        } else if (error.request) {
+            console.error("❌ No response received:", error.request);
+        } else {
+            console.error("❌ Error setting up the request:", error.message);
+        }
         return res.status(500).json({ error: "Failed to fetch opportunities" });
     }
 });

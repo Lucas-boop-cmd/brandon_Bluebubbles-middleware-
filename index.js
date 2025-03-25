@@ -72,8 +72,10 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     try {
         // ✅ Find the corresponding contact in Go High-Level
+        const ghlContactUrl = `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`;
+        console.log("GHL Contact URL:", ghlContactUrl); // Log the URL
         const ghlContact = await axios.get(
-            `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`,
+            ghlContactUrl,
             {
                 headers: {
                     "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
