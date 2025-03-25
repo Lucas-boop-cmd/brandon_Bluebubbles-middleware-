@@ -36,29 +36,21 @@ async function saveGUIDs(guids) {
     }
 }
 
-// Store a new GUID with timestamp and handle address
+// Store a new GUID with handle address
 async function storeGUID(guid, handleAddress) {
     const guids = await loadGUIDs();
-    const timestamp = Date.now();
-
-    guids.push({ guid, timestamp, handleAddress });
+    guids.push({ guid, handleAddress });
     await saveGUIDs(guids);
 
-    // Create an index for searching GUIDs by handle address
-    await client.hSet('handle_index', handleAddress, JSON.stringify({ guid, timestamp }));
+    const value = JSON.stringify({ guid, handleAddress });
+    
+    // Use multi() to execute commands atomically
+    await client.multi()
+        .hSet('handle_index', handleAddress, value)  // Store the mapping
+        .expire('handle_index', 172800)                // Expire in 48 hours
+        .expire('guids', 172800)                       // Expire the list in 48 hours
+        .exec();
 }
-
-// Remove GUIDs older than 48 hours
-async function cleanOldGUIDs() {
-    const guids = await loadGUIDs();
-    const expiryTime = Date.now() - (48 * 60 * 60 * 1000);
-
-    const filteredGUIDs = guids.filter(entry => entry.timestamp > expiryTime);
-    await saveGUIDs(filteredGUIDs);
-}
-
-// Automatically clean old GUIDs every 48 hours
-setInterval(cleanOldGUIDs, 48 * 60 * 60 * 1000);
 
 // Search GUIDs by handle address
 async function searchGUIDsByHandleAddress(handleAddress) {
@@ -74,6 +66,5 @@ module.exports = {
     storeGUID, 
     loadGUIDs, 
     saveGUIDs, 
-    cleanOldGUIDs, 
     searchGUIDsByHandleAddress 
 };

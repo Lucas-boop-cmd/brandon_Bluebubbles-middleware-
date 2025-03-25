@@ -31,11 +31,11 @@ async function RefreshTokens() {
     }
 }
 // Schedule a cron job to refresh tokens at 8 am every morning Eastern Time
-// cron.schedule('0 8 * * *', async () => {
-//     console.log('🔄 Running scheduled token refresh...');
-//     await RefreshTokens();
-// }, {
-//     timezone: "America/New_York"
-// });
+cron.schedule('0 8 * * *', async () => {
+    console.log('🔄 Running scheduled token refresh...');
+    await RefreshTokens();
+}, {
+    timezone: "America/New_York"
+});
 
-// console.log('⏳ Token refresh cron job scheduled for 8:00 AM Eastern Time');
+console.log('⏳ Token refresh cron job scheduled for 8:00 AM Eastern Time');
