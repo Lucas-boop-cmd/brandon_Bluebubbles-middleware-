@@ -224,7 +224,7 @@ app.post('/ghl/webhook', async (req, res) => {
 
         // Store the response GUID in Redis
         const responseGUID = sendMessageResponse.data.data.guid;
-        const handleAddress = sendMessageResponse.data.data.address;
+        const handleAddress = String(sendMessageResponse.data.data.address);
         console.log(`🔍 Storing response GUID in Redis: ${responseGUID} with handleAddress: ${handleAddress}`);
         await client.set(`guid:${responseGUID}`, handleAddress, { EX: 48 * 3600 });
 
