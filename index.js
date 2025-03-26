@@ -224,10 +224,12 @@ app.post('/ghl/webhook', async (req, res) => {
 
         // Store the response GUID in Redis
         const responseGUID = sendMessageResponse.data.data.guid;
-        const handleAddress = String(sendMessageResponse.data.data.address);
+        // Use the phone number from the GHL webhook request
+        const handleAddress = String(req.body.phone);
         console.log(`🔍 Storing response GUID in Redis: ${responseGUID} with handleAddress: ${handleAddress}`);
-        // Remove this line as it's causing the WRONGTYPE error
-        // await client.set(`guid:${responseGUID}`, handleAddress, { EX: 48 * 3600 });
+
+        // Call storeGUID to store the GUID and handleAddress in Redis
+        await storeGUID(responseGUID, handleAddress);
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 

@@ -30,20 +30,14 @@ async function loadGUIDs() {
     return guids.map(guid => JSON.parse(guid));
 }
 
-// Save GUIDs to Redis
-async function saveGUIDs(guids) {
-    await client.del('guids');
-    for (const guid of guids) {
-        await client.rPush('guids', JSON.stringify(guid));
-    }
-}
-
 // Store a new GUID with timestamp and handle address
 async function storeGUID(guid, handleAddress) {
     try {
         // Use a hash to store GUID and address
         await client.hSet(`guid:${handleAddress}`, guid, guid);
-        console.log(`GUID ${guid} stored for address ${handleAddress}`);
+        // Set expiration to 48 hours (48 * 60 * 60 seconds)
+        await client.expire(`guid:${handleAddress}`, 48 * 60 * 60);
+        console.log(`GUID ${guid} stored for address ${handleAddress} with 48-hour expiration`);
     } catch (error) {
         console.error("Error storing GUID in Redis:", error);
     }
