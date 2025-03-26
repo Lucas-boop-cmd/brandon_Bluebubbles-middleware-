@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { uploadTokens, storeGUID, client } = require('./dataBase'); // Import storeGUID
+const { uploadTokens, storeGUID, client, searchGUIDsByHandleAddress } = require('./dataBase'); // Import storeGUID and searchGUIDsByHandleAddress
 const app = express();
 
 const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
@@ -40,8 +40,9 @@ app.post('/bluebubbles/events', async (req, res) => {
 
      // ✅ Check if GUID already exists in the database
     console.log('🔍 Querying Redis for existing GUIDs...');
-    const existingGUIDs = await client.lRange('guids', 0, -1);
-    const isDuplicate = existingGUIDs.some(entry => JSON.parse(entry).guid === guid);
+    const existingGUIDs = await searchGUIDsByHandleAddress(address);
+    const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
+
     if (isDuplicate) {
         console.log('❌ Duplicate GUID detected, ignoring...');
         return res.status(200).json({ status: 'ignored', message: 'Duplicate GUID' });
@@ -227,10 +228,9 @@ app.post('/ghl/webhook', async (req, res) => {
         // Store the response GUID in Redis
         const responseGUID = sendMessageResponse.data.data.guid;
         console.log(`🔍 Storing response GUID in Redis: ${responseGUID}`);
-        await client.rPush('guids', JSON.stringify({ guid: responseGUID, timestamp: Date.now() }));
+        await client.setex(`guid:${responseGUID}`, 48 * 3600, phone);
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
-
 
         // ✅ Update the status of the message in Go High-Level after forwarding to BlueBubbles
         try {

@@ -40,27 +40,16 @@ async function saveGUIDs(guids) {
 
 // Store a new GUID with timestamp and handle address
 async function storeGUID(guid, handleAddress) {
-    const guids = await loadGUIDs();
-    const timestamp = Date.now();
+    // Store the GUID and handleAddress in a single hash
+    const guidKey = `guid:${guid}`;
+    await client.hSet(guidKey, 'handleAddress', handleAddress);
 
-    guids.push({ guid, timestamp, handleAddress });
-    await saveGUIDs(guids);
+    // Set the key to expire after 48 hours (48 * 60 * 60 seconds)
+    await client.expire(guidKey, 48 * 60 * 60);
 
-    // Create an index for searching GUIDs by handle address
-    await client.hSet('handle_index', handleAddress, JSON.stringify({ guid, timestamp }));
+    // Add the GUID to the handle index for searching
+    await client.sAdd(`handle:${handleAddress}`, guid);
 }
-
-// Remove GUIDs older than 48 hours
-async function cleanOldGUIDs() {
-    const guids = await loadGUIDs();
-    const expiryTime = Date.now() - (48 * 60 * 60 * 1000);
-
-    const filteredGUIDs = guids.filter(entry => entry.timestamp > expiryTime);
-    await saveGUIDs(filteredGUIDs);
-}
-
-// Automatically clean old GUIDs every 48 hours
-setInterval(cleanOldGUIDs, 48 * 60 * 60 * 1000);
 
 // Function to set GHL tokens in Redis
 async function setGHLTokens(locationId, accessToken, refreshToken) {
@@ -87,8 +76,26 @@ async function searchGUIDsByHandleAddress(handleAddress) {
     if (typeof handleAddress !== 'string') {
         throw new TypeError('Invalid argument type');
     }
-    const guids = await client.hGet('handle_index', handleAddress);
-    return guids ? [JSON.parse(guids)] : [];
+
+    // Get all GUIDs associated with the handle address
+    const guidKeys = await client.sMembers(`handle:${handleAddress}`);
+
+    // If no GUIDs are found, return an empty array
+    if (!guidKeys || guidKeys.length === 0) {
+        return [];
+    }
+
+    // Fetch the details for each GUID
+    const guids = [];
+    for (const guid of guidKeys) {
+        const guidKey = `guid:${guid}`;
+        const handleAddress = await client.hGet(guidKey, 'handleAddress');
+        if (handleAddress) {
+            guids.push({ guid: guid, handleAddress: handleAddress });
+        }
+    }
+
+    return guids;
 }
 
 module.exports = { client, storeGUID, loadGUIDs, searchGUIDsByHandleAddress, setGHLTokens, loadGHLTokens };
