@@ -29,16 +29,31 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log(`🔍 New message from ${contactId}: ${body}`);
 
     try {
+        // Retrieve the access token from Redis
+        const redisKey = `tokens:${LocationId}`;
+        const accessToken = await client.hGet(redisKey, 'accessToken');
+
+        if (!accessToken) {
+            console.error('❌ Access token not found in Redis!');
+            return res.status(500).json({ error: 'Access token not found in Redis' });
+        }
+
         // Fetch opportunities for the contact
-        const opportunitiesUrl = `https://services.leadconnectorhq.com/opportunities/search?location_id=${process.env.LOCATION_ID}&contact_id=${contactId}`;
-        console.log("Opportunities URL:", opportunitiesUrl); // Add this line
-        const opportunitiesResponse = await axios.get(opportunitiesUrl, {
-            headers: {
-                "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
-                "Version": "2021-07-28",
-                "Accept": "application/json"
-            }
-        });
+        try {
+            const opportunitiesUrl = `https://services.leadconnectorhq.com/opportunities/search?location_id=${process.env.LOCATION_ID}&contact_id=${contactId}`;
+            console.log("Opportunities URL:", opportunitiesUrl); // Add this line
+            const opportunitiesResponse = await axios.get(opportunitiesUrl, {
+                headers: {
+                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Version": "2021-07-28",
+                    "Accept": "application/json"
+                }
+            });
+                } catch (error) {
+                    console.error("❌ General error:", error);
+                    return res.status(500).json({ error: "General error occurred" });
+                }
+
 
         const opportunities = opportunitiesResponse.data.opportunities || [];
 
@@ -127,7 +142,7 @@ app.post('/ghl/webhook', async (req, res) => {
         res.status(200).json({ status: 'success', message: 'Chat marked as read and typing indicator sent to BlueBubbles' });
 
     } catch (error) {
-        console.error("❌ Error fetching opportunities:", error);
+        console.error("❌ Error in webhook:", error);
         if (error.response) {
             console.error("❌ Response data:", error.response.data);
             console.error("❌ Response status:", error.response.status);
@@ -137,6 +152,6 @@ app.post('/ghl/webhook', async (req, res) => {
         } else {
             console.error("❌ Error setting up the request:", error.message);
         }
-        return res.status(500).json({ error: "Failed to fetch opportunities" });
+        return res.status(500).json({ error: "Webhook failed" });
     }
 });
