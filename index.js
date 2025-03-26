@@ -12,12 +12,6 @@ app.use(express.json());
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
 const LocationId = process.env.LOCATION_ID;
-const GHL_ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN;
-
-
-
-// Store to keep track of the last message text from Go High-Level
-const lastGHLMessages = new Map();
 
 // Endpoint to manually upload tokens
 app.post('/upload-tokens', (req, res) => {
@@ -71,6 +65,15 @@ app.post('/bluebubbles/events', async (req, res) => {
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
 
     try {
+        // Retrieve the access token from Redis
+        const redisKey = `tokens:${LocationId}`;
+        const accessToken = await client.hGet(redisKey, 'accessToken');
+
+        if (!accessToken) {
+            console.error('❌ Access token not found in Redis!');
+            return res.status(500).json({ error: 'Access token not found in Redis' });
+        }
+
         // ✅ Find the corresponding contact in Go High-Level
         const ghlContactUrl = `https://services.leadconnectorhq.com/contacts/?query=${address}&locationId=${LocationId}`;
         console.log("GHL Contact URL:", ghlContactUrl); // Log the URL
@@ -78,7 +81,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             ghlContactUrl,
             {
                 headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Authorization": `Bearer ${accessToken}`, // Use the access token from Redis
                     "Version": "2021-04-15",
                     "Accept": "application/json"
                 }
@@ -98,7 +101,7 @@ app.post('/bluebubbles/events', async (req, res) => {
             `https://services.leadconnectorhq.com/conversations/search/?contactId=${contactId}&locationId=${LocationId}`,
             {
                 headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Authorization": `Bearer ${accessToken}`, // Use the access token from Redis
                     "Version": "2021-04-15",
                     "Accept": "application/json"
                 }
@@ -126,7 +129,7 @@ app.post('/bluebubbles/events', async (req, res) => {
                 },
                 {
                     headers: {
-                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Authorization": `Bearer ${accessToken}`, // Use the access token from Redis
                         "Content-Type": "application/json",
                         "Version": "2021-04-15"
                     }
@@ -176,6 +179,15 @@ app.post('/ghl/webhook', async (req, res) => {
     console.log(`🔍 New message from ${userId}: ${message}`);
 
     try {
+        // Retrieve the access token from Redis
+        const redisKey = `tokens:${LocationId}`;
+        const accessToken = await client.hGet(redisKey, 'accessToken');
+
+        if (!accessToken) {
+            console.error('❌ Access token not found in Redis!');
+            return res.status(500).json({ error: 'Access token not found in Redis' });
+        }
+
         // ✅ Query for the handle to get the service
         console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
         const handleResponse = await axios.get(
@@ -235,7 +247,7 @@ app.post('/ghl/webhook', async (req, res) => {
                 },
                 {
                     headers: {
-                        "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                        "Authorization": `Bearer ${accessToken}`, // Use the access token from Redis
                         "Version": "2021-04-15",
                         "Accept": "application/json"
                     }

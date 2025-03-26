@@ -8,10 +8,10 @@ const cron = require('node-cron'); // Add this line to import node-cron
 // Configure Redis client with Redis Cloud endpoint and authentication
 const client = createClient({
     username: 'default',
-    password: 'E8ANdkGNjqXiDdkZ1CzqX4F4KAamWy0x',
+    password: process.env.REDIS_PASSWORD,
     socket: {
-        host: 'redis-13785.c241.us-east-1-4.ec2.redns.redis-cloud.com',
-        port: 13785
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT
     }
 });
 client.on('error', (err) => {
@@ -62,91 +62,24 @@ async function cleanOldGUIDs() {
 // Automatically clean old GUIDs every 48 hours
 setInterval(cleanOldGUIDs, 48 * 60 * 60 * 1000);
 
-// Load tokens from the database
-function loadTokens() {
-    if (!fs.existsSync(filePath)) return {};
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')).tokens || {};
+// Function to set GHL tokens in Redis
+async function setGHLTokens(locationId, accessToken, refreshToken) {
+    const redisKey = `tokens:${locationId}`;
+    await client.hSet(redisKey, 'accessToken', accessToken);
+    await client.hSet(redisKey, 'refreshToken', refreshToken);
+
+    // Calculate expiry time (25 hours in seconds)
+    const expiryTime = 25 * 60 * 60;
+
+    // Set the expiry for the key
+    await client.expire(redisKey, expiryTime);
 }
 
-// Save tokens to the database
-function saveTokens(tokens) {
-    const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
-    data.tokens = tokens;
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
-
-// Manually set GHL tokens with timestamp
-function setGHLTokens(accessToken, refreshToken) {
-    const timestamp = Date.now();
-    const tokens = {
-        GHL_ACCESS_TOKEN: accessToken,
-        GHL_REFRESH_TOKEN: refreshToken,
-        timestamp
-    };
-    saveTokens(tokens);
-}
-
-// Update the uploadTokens.js file with new tokens
-function updateUploadTokensFile(accessToken, refreshToken) {
-    const content = `
-const { uploadTokens } = require('./dataBase');
-
-// Example tokens
-const accessToken = '${accessToken}';
-const refreshToken = '${refreshToken}';
-
-// Manually upload tokens
-uploadTokens(accessToken, refreshToken);
-`;
-
-    fs.writeFileSync(path.join(__dirname, 'uploadTokens.js'), content);
-}
-
-// Check token expiration and refresh if needed
-async function checkAndRefreshToken() {
-    const tokens = loadTokens();
-    const GHL_REFRESH_TOKEN = tokens.GHL_REFRESH_TOKEN;
-    const CLIENT_ID = '67d499bd3e4a8c3076d5e329-m899qb4l';
-    const GHL_CLIENT_SECRET = 'c8eefd7b-f824-4a84-b10b-963ae75c0e7c';
-
-    try {
-        const response = await axios.post(
-            'https://services.leadconnectorhq.com/oauth/token',
-            {
-                client_id: CLIENT_ID,
-                client_secret: GHL_CLIENT_SECRET,
-                grant_type: 'refresh_token',
-                refresh_token: GHL_REFRESH_TOKEN,
-                user_type: 'Location'
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-
-        const GHL_ACCESS_TOKEN = response.data.access_token;
-        const newGHL_REFRESH_TOKEN = response.data.refresh_token;
-        const newTimestamp = Date.now();
-
-        setGHLTokens(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
-
-        // Update the uploadTokens.js file with new tokens
-        updateUploadTokensFile(GHL_ACCESS_TOKEN, newGHL_REFRESH_TOKEN);
-
-        console.log('✅ GHL API token refreshed successfully');
-        return { GHL_ACCESS_TOKEN, tokenTimestamp: newTimestamp };
-    } catch (error) {
-        console.error('❌ Error refreshing GHL API token:', error.response ? error.response.data : error.message);
-        throw error;
-    }
-}
-
-// Function to manually upload tokens into the database
-function uploadTokens(accessToken, refreshToken) {
-    setGHLTokens(accessToken, refreshToken);
-    console.log('✅ Tokens uploaded successfully');
+// Function to load GHL tokens from Redis
+async function loadGHLTokens(locationId) {
+    const redisKey = `tokens:${locationId}`;
+    const tokens = await client.hGetAll(redisKey);
+    return tokens;
 }
 
 // Search GUIDs by handle address
@@ -158,16 +91,4 @@ async function searchGUIDsByHandleAddress(handleAddress) {
     return guids ? [JSON.parse(guids)] : [];
 }
 
-// Schedule a cron job to refresh tokens at 8 am every morning Eastern Time
-cron.schedule('0 8 * * *', async () => {
-    try {
-        await checkAndRefreshToken();
-        console.log('✅ Tokens refreshed successfully by cron job');
-    } catch (error) {
-        console.error('❌ Error refreshing tokens by cron job:', error);
-    }
-}, {
-    timezone: "America/New_York"
-});
-
-module.exports = { client, storeGUID, loadGUIDs, loadTokens, setGHLTokens, checkAndRefreshToken, uploadTokens, searchGUIDsByHandleAddress };
+module.exports = { client, storeGUID, loadGUIDs, searchGUIDsByHandleAddress, setGHLTokens, loadGHLTokens };
