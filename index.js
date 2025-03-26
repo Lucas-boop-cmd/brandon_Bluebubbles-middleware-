@@ -222,13 +222,11 @@ app.post('/ghl/webhook', async (req, res) => {
 
         console.log("✅ Message successfully forwarded to BlueBubbles!", sendMessageResponse.data);
 
-        // Store the last message text and messageId from Go High-Level
-        lastGHLMessages.set(phone, { text: message });
-
         // Store the response GUID in Redis
         const responseGUID = sendMessageResponse.data.data.guid;
-        console.log(`🔍 Storing response GUID in Redis: ${responseGUID}`);
-        await client.setex(`guid:${responseGUID}`, 48 * 3600, phone);
+        const handleAddress = sendMessageResponse.data.data.address;
+        console.log(`🔍 Storing response GUID in Redis: ${responseGUID} with handleAddress: ${handleAddress}`);
+        await client.setex(`guid:${responseGUID}`, 48 * 3600, handleAddress);
 
         res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
