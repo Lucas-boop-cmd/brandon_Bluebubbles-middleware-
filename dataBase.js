@@ -50,7 +50,7 @@ async function setGHLTokens(locationId, accessToken, refreshToken) {
     await client.hSet(redisKey, 'refreshToken', refreshToken);
 
     // Calculate expiry time (25 hours in seconds)
-    const expiryTime = 25 * 60 * 60;
+    const expiryTime = 30 * 60 * 60;
 
     // Set the expiry for the key
     await client.expire(redisKey, expiryTime);

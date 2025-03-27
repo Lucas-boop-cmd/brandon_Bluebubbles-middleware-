@@ -7,9 +7,29 @@ const locationId = process.env.LOCATION_ID;
 const CLIENT_ID = process.env.GHL_CLIENT_ID;
 const GHL_CLIENT_SECRET = process.env.GHL_CLIENT_SECRET;
 
+let refreshToken; // Declare refreshToken
+
+// Before the RefreshTokens function, retrieve the refresh token from Redis
+async function getRefreshToken() {
+    try {
+        const refreshTokenKey = `tokens:${locationId}`;
+        refreshToken = await client.hGet(refreshTokenKey, 'refreshToken');
+        if (!refreshToken) {
+            throw new Error('No refresh token found in Redis. Please authorize the application first.');
+        }
+        return refreshToken;
+    } catch (error) {
+        console.error('Failed to retrieve refresh token from Redis:', error);
+        return null; // Or handle the error as needed
+    }
+}
+
 // Function to refresh GHL tokens
 async function RefreshTokens() {
     try {
+        // Ensure refreshToken is fetched before using it
+        await getRefreshToken();
+
         const response = await axios.post(
             'https://services.leadconnectorhq.com/oauth/token',
             new URLSearchParams({
@@ -41,7 +61,11 @@ async function RefreshTokens() {
 // Schedule a cron job to refresh tokens at 8:15 am every morning Eastern Time
 cron.schedule('15 8 * * *', async () => {
     console.log('🔄 Running scheduled token refresh...');
-    await RefreshTokens();
+    try {
+        await RefreshTokens();
+    } catch (error) {
+        console.error('Cron job failed:', error);
+    }
 }, {
     timezone: "America/New_York"
 });
