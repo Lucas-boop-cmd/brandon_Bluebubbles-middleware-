@@ -7,6 +7,7 @@ let tokens = loadTokens();
 let GHL_ACCESS_TOKEN = tokens.GHL_ACCESS_TOKEN;
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
+const LocationId = process.env.LOCATION_ID;
 
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles (POST)
 app.post('/ghl/webhook', async (req, res) => {
@@ -40,11 +41,11 @@ app.post('/ghl/webhook', async (req, res) => {
 
         // Fetch opportunities for the contact
         try {
-            const opportunitiesUrl = `https://services.leadconnectorhq.com/opportunities/search?location_id=${process.env.LOCATION_ID}&contact_id=${contactId}`;
+            const opportunitiesUrl = `https://services.leadconnectorhq.com/opportunities/search?location_id=${LocationId}&contact_id=${contactId}`;
             console.log("Opportunities URL:", opportunitiesUrl); // Add this line
             const opportunitiesResponse = await axios.get(opportunitiesUrl, {
                 headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Authorization": `Bearer ${accessToken}`,
                     "Version": "2021-07-28",
                     "Accept": "application/json"
                 }
@@ -72,7 +73,7 @@ app.post('/ghl/webhook', async (req, res) => {
             `https://services.leadconnectorhq.com/contacts/${contactId}`,
             {
                 headers: {
-                    "Authorization": `Bearer ${GHL_ACCESS_TOKEN}`,
+                    "Authorization": `Bearer ${accessToken}`,
                     "Version": "2021-07-28",
                     "Accept": "application/json"
                 }
@@ -123,7 +124,7 @@ app.post('/ghl/webhook', async (req, res) => {
         console.log("✅ Chat marked as read in BlueBubbles!");
 
         // ✅ Wait for 3 seconds
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // ✅ Send typing indicator to BlueBubbles
         console.log(`🔍 Sending typing indicator to BlueBubbles with GUID: ${chatGuid}`);
