@@ -12,15 +12,21 @@ const LocationId = process.env.LOCATION_ID;
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles (POST)
 app.post('/ghl/ai/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:');
+    console.log('Request body:', req.body); // Log the entire request body for debugging
 
     // Directly destructure the fields from req.body
     const { body, contactId, conversationId, messageType, messageId } = req.body;
 
-    // Filter to only process events of type 'InboundMessage'
+    // Log the extracted fields for debugging
+    console.log('Extracted fields:', { body, contactId, conversationId, messageType, messageId });
+
+    // Filter to only process events of type 'Custom'
     if (messageType !== 'Custom') {
-        console.log("❌ Ignoring non-SMS event:", type);
-        return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
+        console.log("❌ Ignoring event due to incorrect messageType:", messageType);
+        return res.status(200).json({ status: 'ignored', message: 'Event is not of type Custom' });
     }
+
+    console.log("✅ Message is of type 'Custom' and will proceed to the next step."); // Log confirmation
 
     if (!contactId || !conversationId || !body || !messageId) {
         console.error("❌ Missing required fields in Go High-Level event:", req.body);
@@ -32,6 +38,7 @@ app.post('/ghl/ai/webhook', async (req, res) => {
     try {
         // Retrieve the access token from Redis
         const redisKey = `tokens:${LocationId}`;
+        console.log('🔑 Redis key for access token:', redisKey); // Log the Redis key
         const accessToken = await client.hGet(redisKey, 'accessToken');
 
         if (!accessToken) {
@@ -39,10 +46,12 @@ app.post('/ghl/ai/webhook', async (req, res) => {
             return res.status(500).json({ error: 'Access token not found in Redis' });
         }
 
+        console.log('✅ Retrieved access token from Redis.');
+
         // Fetch opportunities for the contact
         try {
             const opportunitiesUrl = `https://services.leadconnectorhq.com/opportunities/search?location_id=${LocationId}&contact_id=${contactId}`;
-            console.log("Opportunities URL:", opportunitiesUrl); // Add this line
+            console.log("🔍 Fetching opportunities from URL:", opportunitiesUrl); // Log the URL
             const opportunitiesResponse = await axios.get(opportunitiesUrl, {
                 headers: {
                     "Authorization": `Bearer ${accessToken}`,
@@ -51,10 +60,14 @@ app.post('/ghl/ai/webhook', async (req, res) => {
                 }
             });
 
+            console.log("✅ Opportunities response:", opportunitiesResponse.data); // Log the response data
+
             const opportunities = opportunitiesResponse.data.opportunities || [];
+            console.log("Filtered opportunities:", opportunities); // Log the opportunities array
 
             // Filter opportunities by pipelineId
             const filteredOpportunities = opportunities.filter(opp => opp.pipelineId === 'miROu60WWLR1DxsvvAu1');
+            console.log("✅ Matching opportunities:", filteredOpportunities); // Log the filtered opportunities
 
             if (filteredOpportunities.length === 0) {
                 console.log("❌ No opportunities found with the specified pipelineId.");
@@ -74,6 +87,8 @@ app.post('/ghl/ai/webhook', async (req, res) => {
                     }
                 }
             );
+
+            console.log("✅ Contact response:", contactResponse.data); // Log the contact response
 
             const contact = contactResponse.data.contact;
 
@@ -138,7 +153,7 @@ app.post('/ghl/ai/webhook', async (req, res) => {
             res.status(200).json({ status: 'success', message: 'Chat marked as read and typing indicator sent to BlueBubbles' });
 
         } catch (error) {
-            console.error("❌ Error in webhook:", error);
+            console.error("❌ Error fetching opportunities or contact details:", error);
             if (error.response) {
                 console.error("❌ Response data:", error.response.data);
                 console.error("❌ Response status:", error.response.status);
@@ -148,7 +163,7 @@ app.post('/ghl/ai/webhook', async (req, res) => {
             } else {
                 console.error("❌ Error setting up the request:", error.message);
             }
-            return res.status(500).json({ error: "Webhook failed" });
+            return res.status(500).json({ error: "Error fetching opportunities or contact details" });
         }
     } catch (error) {
         console.error("❌ General error:", error);
