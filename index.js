@@ -39,7 +39,6 @@ app.post('/bluebubbles/events', async (req, res) => {
     const address = handle?.address;
 
      // ✅ Check if GUID already exists in the database
-    console.log('🔍 Querying Redis for existing GUIDs...');
     const existingGUIDs = await searchGUIDsByHandleAddress(address);
     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
 
@@ -210,7 +209,7 @@ app.post('/ghl/webhook', async (req, res) => {
 
         // ✅ Send the message to BlueBubbles
         const tempGuid = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-        console.log(`🔍 Sending message to BlueBubbles chat with GUID: ${chatGuid} and tempGuid: ${tempGuid}`);
+        console.log(`🔍 Sending message to BlueBubbles chat with tempGuid: ${tempGuid}`);
         const sendMessageResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/message/text?password=${BLUEBUBBLES_PASSWORD}`,
             {
@@ -228,6 +227,9 @@ app.post('/ghl/webhook', async (req, res) => {
         const handleAddress = String(req.body.phone);
         console.log(`🔍 Storing response GUID in Redis: ${responseGUID} with handleAddress: ${handleAddress}`);
         await storeGUID(responseGUID, handleAddress);
+
+        // ✅ Send 200 OK back to Go High-Level acknowledging the handoff
+        return res.status(200).json({ status: 'success', message: 'Message successfully forwarded to BlueBubbles' });
 
         // ✅ Update the status of the message in Go High-Level after forwarding to BlueBubbles
         const ghlResponse = await axios.put(
@@ -247,8 +249,6 @@ app.post('/ghl/webhook', async (req, res) => {
         } else {
             console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
         }
-
-        return res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
     } catch (error) {
         console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);

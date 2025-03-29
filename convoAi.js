@@ -10,7 +10,7 @@ const LocationId = process.env.LOCATION_ID;
 module.exports.processInboundMessage = async (eventData) => {
     console.log('📥 Processing InboundMessage event:', eventData);
 
-    const { body, contactId, conversationId, messageType, messageId } = eventData;
+    const { body, contactId, conversationId, messageId } = eventData;
 
     if (!contactId || !conversationId || !body || !messageId) {
         console.error("❌ Missing required fields in InboundMessage event:", eventData);
@@ -89,7 +89,7 @@ module.exports.processInboundMessage = async (eventData) => {
         }
 
         const chatGuid = `${service};-;${contactPhone}`;
-        console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${contactPhone}`);
+        console.log(`✅ Constructed Chat GUID for ${contactPhone}`);
 
         // Mark chat as read in BlueBubbles
         await axios.post(
