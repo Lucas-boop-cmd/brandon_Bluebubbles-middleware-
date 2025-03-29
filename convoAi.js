@@ -10,11 +10,11 @@ const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
 const LocationId = process.env.LOCATION_ID;
 
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles (POST)
-app.post('/ghl/webhook', async (req, res) => {
+app.post('/ghl/ai/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:');
 
     // Directly destructure the fields from req.body
-    const { body, contactId, conversationId, type, messageId, conversationProviderId, direction } = req.body;
+    const { body, contactId, conversationId, type, messageId } = req.body;
 
     // Filter to only process events of type 'InboundMessage'
     if (type !== 'InboundMessage') {
