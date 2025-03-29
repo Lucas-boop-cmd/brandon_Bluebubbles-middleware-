@@ -156,7 +156,14 @@ app.post('/ghl/webhook', async (req, res) => {
     // Directly destructure the fields from req.body
     const { phone, message, userId, messageId, type } = req.body;
 
-    // Filter to only process events of type SMS
+    // Filter to only process events of type SMS or InboundMessage
+    if (type === 'InboundMessage') {
+        console.log("🔄 Forwarding InboundMessage event to convoAi.js for processing...");
+        const convoAi = require('./convoAi');
+        await convoAi.processInboundMessage(req.body);
+        return res.status(200).json({ status: 'success', message: 'InboundMessage forwarded to convoAi.js' });
+    }
+
     if (type !== 'SMS') {
         console.log("❌ Ignoring non-SMS event:", type);
         return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
