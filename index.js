@@ -38,7 +38,7 @@ app.post('/bluebubbles/events', async (req, res) => {
     const { guid, text, isFromMe, handle, originalROWID } = data;
     const address = handle?.address;
 
-    // ✅ Check if GUID already exists in the database
+     // ✅ Check if GUID already exists in the database
     console.log('🔍 Querying Redis for existing GUIDs...');
     const existingGUIDs = await searchGUIDsByHandleAddress(address);
     const isDuplicate = existingGUIDs.some(entry => entry.guid === guid);
@@ -59,9 +59,6 @@ app.post('/bluebubbles/events', async (req, res) => {
 
     console.log(`🔍 New message from ${isFromMe ? "Me (Sent from iMessage)" : address}: ${text}`);
 
-    // ✅ Store the new GUID in the database
-    await storeGUID(guid, address);
-
     try {
         // Retrieve the access token from Redis
         const redisKey = `tokens:${LocationId}`;
@@ -69,7 +66,7 @@ app.post('/bluebubbles/events', async (req, res) => {
 
         if (!accessToken) {
             console.error('❌ Access token not found in Redis!');
-            return res.status(200).json({ error: 'Access token not found in Redis' });
+            return res.status(500).json({ error: 'Access token not found in Redis' });
         }
 
         // ✅ Find the corresponding contact in Go High-Level
@@ -133,6 +130,9 @@ app.post('/bluebubbles/events', async (req, res) => {
                     }
                 }
             );
+
+            // ✅ Store the new GUID in the database
+            await storeGUID(guid, address);
 
         } catch (error) {
             console.error("❌ Error sending message to Go High-Level:", error.response ? error.response.data : error.message);
