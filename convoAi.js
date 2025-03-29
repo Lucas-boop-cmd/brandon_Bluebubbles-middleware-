@@ -100,17 +100,22 @@ module.exports.processInboundMessage = async (eventData) => {
 
         console.log("✅ Chat marked as read in BlueBubbles!");
 
-        // Wait for 3 seconds
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Wait for 5 seconds (increase to 5 seconds for better reliability)
+        console.log("⏳ Waiting for 5 seconds before sending the typing indicator...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
-        // Send typing indicator to BlueBubbles
-        await axios.post(
+        // ✅ Send typing indicator to BlueBubbles
+        console.log(`🔍 Sending typing indicator to BlueBubbles with GUID: ${encodeURIComponent(chatGuid)}`);
+        const typingResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/${encodeURIComponent(chatGuid)}/typing?password=${BLUEBUBBLES_PASSWORD}`,
-            {},
-            { headers: { "Content-Type": "application/json" } }
+            {}, // Empty data
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
         );
-
-        console.log("✅ Typing indicator sent to BlueBubbles!");
+       console.log("✅ Typing indicator sent to BlueBubbles!", typingResponse.data);
 
     } catch (error) {
         console.error("❌ Error processing InboundMessage event:", error);
