@@ -93,7 +93,7 @@ module.exports.processInboundMessage = async (eventData) => {
 
         // Mark chat as read in BlueBubbles
         await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/chat/${encodeURIComponent(chatGuid)}/read?password=${BLUEBUBBLES_PASSWORD}`,
+            `${BLUEBUBBLES_API_URL}/api/v1/chat/${chatGuid}/read?password=${BLUEBUBBLES_PASSWORD}`,
             {},
             { headers: { "Content-Type": "application/json" } }
         );
@@ -105,9 +105,9 @@ module.exports.processInboundMessage = async (eventData) => {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         // ✅ Send typing indicator to BlueBubbles
-        console.log(`🔍 Sending typing indicator to BlueBubbles with GUID: ${encodeURIComponent(chatGuid)}`);
+        console.log(`🔍 Sending typing indicator to BlueBubbles with GUID: ${chatGuid}`);
         const typingResponse = await axios.post(
-            `${BLUEBUBBLES_API_URL}/api/v1/chat/${encodeURIComponent(chatGuid)}/typing?password=${BLUEBUBBLES_PASSWORD}`,
+            `${BLUEBUBBLES_API_URL}/api/v1/chat/${chatGuid}/typing?password=${BLUEBUBBLES_PASSWORD}`,
             {}, // Empty data
             {
                 headers: {
@@ -115,7 +115,7 @@ module.exports.processInboundMessage = async (eventData) => {
                 }
             }
         );
-       console.log("✅ Typing indicator sent to BlueBubbles!", typingResponse.data);
+        console.log("✅ Typing indicator sent to BlueBubbles!", typingResponse.data);
 
     } catch (error) {
         console.error("❌ Error processing InboundMessage event:", error);
