@@ -108,12 +108,7 @@ module.exports.processInboundMessage = async (eventData) => {
         console.log(`🔍 Sending typing indicator to BlueBubbles with GUID: ${chatGuid}`);
         const typingResponse = await axios.post(
             `${BLUEBUBBLES_API_URL}/api/v1/chat/${chatGuid}/typing?password=${BLUEBUBBLES_PASSWORD}`,
-            {}, // Empty data
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
+            {} // Empty data
         );
         console.log("✅ Typing indicator sent to BlueBubbles!", typingResponse.data);
 
