@@ -68,7 +68,6 @@ async function searchGUIDsByHandleAddress(handleAddress) {
     try {
         // Retrieve all GUIDs associated with the address from the hash
         const guids = await client.hGetAll(`guid:${handleAddress}`);
-        console.log(`Found GUIDs for address ${handleAddress}:`, guids);
         return Object.entries(guids).map(([key, value]) => ({ guid: value })); // Return as array of objects
     } catch (error) {
         console.error("Error searching GUIDs in Redis:", error);
