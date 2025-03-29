@@ -153,34 +153,33 @@ app.post('/bluebubbles/events', async (req, res) => {
 app.post('/ghl/webhook', async (req, res) => {
     console.log('📥 Received Go High-Level event:', req.body);
 
-    // Directly destructure the fields from req.body
     const { phone, message, userId, messageId, type } = req.body;
 
-    // Filter to only process events of type SMS or InboundMessage
-    if (type === 'InboundMessage') {
-        console.log("🔄 Forwarding InboundMessage event to convoAi.js for processing...");
-        const convoAi = require('./convoAi');
-        await convoAi.processInboundMessage(req.body);
-        return res.status(200).json({ status: 'success', message: 'InboundMessage forwarded to convoAi.js' });
-    }
-
-    if (type !== 'SMS') {
-        console.log("❌ Ignoring non-SMS event:", type);
-        return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
-    }
-
-    if (!phone || !message || !userId || !messageId) {
-        console.error("❌ Missing required fields in Go High-Level event:", req.body);
-        if (!phone) console.error("❌ Missing field: phone");
-        if (!message) console.error("❌ Missing field: message");
-        if (!userId) console.error("❌ Missing field: userId");
-        if (!messageId) console.error("❌ Missing field: messageId");
-        return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    console.log(`🔍 New message from ${userId}: ${message}`);
-
     try {
+        // Filter to only process events of type SMS or InboundMessage
+        if (type === 'InboundMessage') {
+            console.log("🔄 Forwarding InboundMessage event to convoAi.js for processing...");
+            const convoAi = require('./convoAi');
+            await convoAi.processInboundMessage(req.body);
+            return res.status(200).json({ status: 'success', message: 'InboundMessage forwarded to convoAi.js' });
+        }
+
+        if (type !== 'SMS') {
+            console.log("❌ Ignoring non-SMS event:", type);
+            return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
+        }
+
+        if (!phone || !message || !userId || !messageId) {
+            console.error("❌ Missing required fields in Go High-Level event:", req.body);
+            if (!phone) console.error("❌ Missing field: phone");
+            if (!message) console.error("❌ Missing field: message");
+            if (!userId) console.error("❌ Missing field: userId");
+            if (!messageId) console.error("❌ Missing field: messageId");
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        console.log(`🔍 New message from ${userId}: ${message}`);
+
         // Retrieve the access token from Redis
         const redisKey = `tokens:${LocationId}`;
         const accessToken = await client.hGet(redisKey, 'accessToken');
@@ -219,11 +218,6 @@ app.post('/ghl/webhook', async (req, res) => {
                 tempGuid: tempGuid,
                 message: message,
                 method: "apple-script"
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
             }
         );
 
@@ -231,48 +225,36 @@ app.post('/ghl/webhook', async (req, res) => {
 
         // Store the response GUID in Redis
         const responseGUID = sendMessageResponse.data.data.guid;
-        // Use the phone number from the GHL webhook request
         const handleAddress = String(req.body.phone);
         console.log(`🔍 Storing response GUID in Redis: ${responseGUID} with handleAddress: ${handleAddress}`);
-
-        // Call storeGUID to store the GUID and handleAddress in Redis
         await storeGUID(responseGUID, handleAddress);
 
-        res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
-
         // ✅ Update the status of the message in Go High-Level after forwarding to BlueBubbles
-        try {
-            const ghlResponse = await axios.put(
-                `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
-                {
-                    "status": "delivered"
-                },
-                {
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`, // Use the access token from Redis
-                        "Version": "2021-04-15",
-                        "Accept": "application/json"
-                    }
+        const ghlResponse = await axios.put(
+            `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+            { "status": "delivered" },
+            {
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Version": "2021-04-15",
+                    "Accept": "application/json"
                 }
-            );
-
-            if (ghlResponse.status === 200) {
-                console.log("✅ Message status updated in Go High-Level!!", ghlResponse.data, messageId);
-            } else {
-                console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
-                return res.status(500).json({ error: "Failed to update message status in GHL" });
             }
-        } catch (error) {
-            console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
-            return res.status(500).json({ error: "Internal server error" });
+        );
+
+        if (ghlResponse.status === 200) {
+            console.log("✅ Message status updated in Go High-Level!!", ghlResponse.data, messageId);
+        } else {
+            console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
         }
+
+        return res.status(200).json({ status: 'success', message: 'Message forwarded to BlueBubbles and status updated in GHL' });
 
     } catch (error) {
         console.error("❌ Error processing Go High-Level message:", error.response ? error.response.data : error.message);
-        if (error.response) {
-            console.error("❌ BlueBubbles API error response:", error.response.data);
+        if (!res.headersSent) {
+            return res.status(500).json({ error: "Internal server error" });
         }
-        res.status(500).json({ error: "Internal server error" });
     }
 });
 
