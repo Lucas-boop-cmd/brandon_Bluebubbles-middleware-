@@ -100,10 +100,6 @@ module.exports.processInboundMessage = async (eventData) => {
 
         console.log("✅ Chat marked as read in BlueBubbles!");
 
-        // Wait for 5 seconds (increase to 5 seconds for better reliability)
-        console.log("⏳ Waiting for 5 seconds before sending the typing indicator...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
         // ✅ Send typing indicator to BlueBubbles
         console.log(`🔍 Sending typing indicator to BlueBubbles with GUID: ${chatGuid}`);
         const typingResponse = await axios.post(
