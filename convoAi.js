@@ -17,7 +17,7 @@ app.post('/ghl/webhook', async (req, res) => {
     const { body, contactId, conversationId, type, messageId, conversationProviderId, direction } = req.body;
 
     // Filter to only process events of type 'InboundMessage'
-    if (type !== 'InboundMessage' || conversationProviderId !== '67dc4a38fd73f8e93e63b370' || direction !== 'inbound') {
+    if (type !== 'InboundMessage') {
         console.log("❌ Ignoring non-SMS event:", type);
         return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
     }
