@@ -1,6 +1,6 @@
 require('dotenv').config();
 const axios = require('axios');
-const { loadTokens } = require('./dataBase');
+const { client } = require('./dataBase'); // Import client
 
 // Load tokens from the database
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
