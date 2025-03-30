@@ -1,8 +1,14 @@
 // Load environment variables
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
+// Ensure Netlify environment variables are handled
+const NETLIFY_API_URL = process.env.REACT_APP_NETLIFY_API_URL || API_URL;
+
 // Example usage of the environment variable
 console.log(`Connecting to API at: ${API_URL}`);
+
+// Log the Netlify-specific API URL
+console.log(`Netlify API URL: ${NETLIFY_API_URL}`);
 
 // Production build setup
 if (process.env.NODE_ENV === 'production') {
@@ -13,4 +19,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Export necessary configurations if needed
-export { API_URL };
+export { API_URL, NETLIFY_API_URL };
+
+
