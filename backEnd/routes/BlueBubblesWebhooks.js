@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router(); // Use express.Router() to create a new router instance
 
 const LocationId = process.env.LOCATION_ID;
-const { storeGUID, client, searchGUIDsByHandleAddress } = require('./dataBase'); // Import storeGUID and searchGUIDsByHandleAddress
+const { storeGUID, client, searchGUIDsByHandleAddress } = require('../dataBase'); // Import storeGUID and searchGUIDsByHandleAddress
 const conversationProviderId = process.env.CONVERSATION_PROVIDER_ID;
 
 

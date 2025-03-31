@@ -6,7 +6,7 @@ const LocationId = process.env.LOCATION_ID;
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
 const BLUEBUBBLES_PASSWORD = process.env.BLUEBUBBLES_PASSWORD;
 
-const { storeGUID, client, } = require('./dataBase'); // Import storeGUID and searchGUIDsByHandleAddress
+const { storeGUID, client, } = require('../dataBase'); // Import storeGUID and searchGUIDsByHandleAddress
 
 // ✅ Webhook to Receive Messages from Go High-Level and Forward to BlueBubbles (POST)
 router.post('/ghl/webhook', async (req, res) => { // Use router.post instead of app.post
