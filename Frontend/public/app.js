@@ -100,14 +100,14 @@
             if (realtorData.forms && realtorData.forms.length > 0) {
                 contactHtml += '<div class="mt-4">';
                 realtorData.forms.forEach(form => {
-                    contactHtml += `<p class="mb-2"><a href="forms.html?form=${encodeURIComponent(form.id)}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">${form.title || 'Complete Form'}</a></p>`;
+                    contactHtml += `<p class="mb-2"><a href="forms.html?form=${encodeURIComponent(form.id)}&agent=${encodeURIComponent(agent)}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">${form.title || 'Complete Form'}</a></p>`;
                 });
                 contactHtml += '</div>';
             }
             
-            // Add Find Out Now button
+            // Add Find Out Now button with agent parameter
             contactHtml += `<div class="mt-4">
-                <a href="forms.html?form=customer" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded block text-center">Find Out Now</a>
+                <a href="forms.html?form=customer&agent=${encodeURIComponent(agent)}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded block text-center">Find Out Now</a>
             </div>`;
             
             contactInfo.innerHTML = contactHtml;
@@ -163,6 +163,7 @@
             getCardButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.href = 'forms.html?form=realtor';
+                // No agent parameter needed here as this is for new realtors
             });
         }
         

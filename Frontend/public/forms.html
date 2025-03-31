@@ -24,6 +24,10 @@
         <div id="customer-form" class="hidden">
             <iframe src="https://api.leadconnectorhq.com/widget/survey/ZdxUZnijqVITonoQQHBQ" style="border:none;width:100%;" scrolling="no" id="ZdxUZnijqVITonoQQHBQ" title="New Lucas Payment calculator"></iframe>
         </div>
+        
+        <div id="back-button" class="mt-6 text-center hidden">
+            <a href="#" class="text-blue-600 hover:text-blue-800 underline">Back to Agent Page</a>
+        </div>
     </div>
     
     <script src="https://link.msgsndr.com/js/form_embed.js"></script>
@@ -31,11 +35,19 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const formType = urlParams.get('form');
+            const agent = urlParams.get('agent');
             
             const loadingElement = document.getElementById('loading');
             const errorElement = document.getElementById('error-message');
             const realtorForm = document.getElementById('realtor-form');
             const customerForm = document.getElementById('customer-form');
+            const backButton = document.getElementById('back-button');
+            
+            // Handle back button if agent is present
+            if (agent && backButton) {
+                backButton.querySelector('a').href = `index.html?agent=${encodeURIComponent(agent)}`;
+                backButton.classList.remove('hidden');
+            }
             
             if (formType === 'realtor') {
                 // Show realtor form
@@ -50,6 +62,11 @@
                 errorElement.querySelector('span').textContent = 'Invalid or missing form type.';
                 errorElement.classList.remove('hidden');
                 loadingElement.classList.add('hidden');
+            }
+            
+            // Store agent param in session storage for potential use later
+            if (agent) {
+                sessionStorage.setItem('currentAgent', agent);
             }
         });
     </script>
