@@ -1,9 +1,6 @@
 require('dotenv').config();
-const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const { createClient } = require('redis');
-const cron = require('node-cron'); // Add this line to import node-cron
 
 // Configure Redis client with Redis Cloud endpoint and authentication
 const client = createClient({
