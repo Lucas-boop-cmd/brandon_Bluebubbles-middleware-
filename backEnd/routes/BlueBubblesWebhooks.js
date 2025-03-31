@@ -1,6 +1,7 @@
 require('dotenv').config(); // safe to use in every file if needed
 const express = require('express');
 const router = express.Router(); // Use express.Router() to create a new router instance
+const axios = require('axios');
 
 const LocationId = process.env.LOCATION_ID;
 const { storeGUID, client, searchGUIDsByHandleAddress } = require('../dataBase'); // Import storeGUID and searchGUIDsByHandleAddress

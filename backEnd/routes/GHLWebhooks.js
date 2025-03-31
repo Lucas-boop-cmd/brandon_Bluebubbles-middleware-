@@ -1,6 +1,7 @@
 require('dotenv').config(); // safe to use in every file if needed
 const express = require('express');
 const router = express.Router(); // Use express.Router() to create a new router instance
+const axios = require('axios');
 
 const LocationId = process.env.LOCATION_ID;
 const BLUEBUBBLES_API_URL = process.env.BLUEBUBBLES_API_URL;
@@ -92,25 +93,25 @@ router.post('/ghl/webhook', async (req, res) => { // Use router.post instead of 
         res.status(200).json({ status: 'success', message: 'Message successfully forwarded to BlueBubbles' });
 
         // ✅ Update the status of the message in Go High-Level after forwarding to BlueBubbles
-try {
-        const ghlResponse = await axios.put(
-            `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
-            { "status": "delivered" },
-            {
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Version": "2021-04-15",
-                    "Accept": "application/json"
+        try {
+            const ghlResponse = await axios.put(
+                `https://services.leadconnectorhq.com/conversations/messages/${messageId}/status`,
+                { "status": "delivered" },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Version": "2021-04-15",
+                        "Accept": "application/json"
+                    }
                 }
-            }
-        );
+            );
 
-        if (ghlResponse.status === 200) {
-            console.log("✅ Message status updated in Go High-Level!!", ghlResponse.data, messageId);
-        } else {
-            console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
-        }
-} catch (error) {
+            if (ghlResponse.status === 200) {
+                console.log("✅ Message status updated in Go High-Level!!", ghlResponse.data, messageId);
+            } else {
+                console.error("❌ Failed to update message status in Go High-Level:", ghlResponse.data);
+            }
+        } catch (error) {
             console.error("❌ Error updating message status in Go High-Level:", error.response ? error.response.data : error.message);
         }
 
