@@ -53,15 +53,19 @@
     };
     
     const updateRealtorInfo = (realtorData) => {
+        // Log the entire data object for debugging
+        console.log('Complete realtor data object:', realtorData);
+        
         // Update realtor headshot
         const headshot = document.getElementById('realtor-headshot');
         if (headshot) {
-            // Debug the headshot URL
-            console.log('Realtor headshot URL:', realtorData.realtorHeadshot);
+            // Only use the source field for the headshot URL
+            const headshotUrl = realtorData.source;
+            console.log('Realtor headshot URL:', headshotUrl);
             
             // Check if headshot URL exists and is valid
-            if (realtorData.realtorHeadshot && isValidUrl(realtorData.realtorHeadshot)) {
-                headshot.src = realtorData.realtorHeadshot;
+            if (headshotUrl && isValidUrl(headshotUrl)) {
+                headshot.src = headshotUrl;
                 headshot.alt = `${realtorData.firstName} ${realtorData.lastName}`;
                 
                 // Add error handling for image loading
