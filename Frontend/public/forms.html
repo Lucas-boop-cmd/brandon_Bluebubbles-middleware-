@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Selection</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-8 flex-grow">
+        <div id="loading" class="text-center py-10">
+            <p class="text-xl text-gray-600">Loading form...</p>
+        </div>
+        
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline"></span>
+        </div>
+        
+        <div id="realtor-form" class="hidden">
+            <iframe src="https://api.leadconnectorhq.com/widget/survey/npOQeePCnk9G9Yyqau5U" style="border:none;width:100%;" scrolling="no" id="npOQeePCnk9G9Yyqau5U" title="Realtor Funnel"></iframe>
+        </div>
+        
+        <div id="customer-form" class="hidden">
+            <iframe src="https://api.leadconnectorhq.com/widget/survey/ZdxUZnijqVITonoQQHBQ" style="border:none;width:100%;" scrolling="no" id="ZdxUZnijqVITonoQQHBQ" title="New Lucas Payment calculator"></iframe>
+        </div>
+    </div>
+    
+    <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const formType = urlParams.get('form');
+            
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error-message');
+            const realtorForm = document.getElementById('realtor-form');
+            const customerForm = document.getElementById('customer-form');
+            
+            if (formType === 'realtor') {
+                // Show realtor form
+                realtorForm.classList.remove('hidden');
+                loadingElement.classList.add('hidden');
+            } else if (formType === 'customer') {
+                // Show customer form
+                customerForm.classList.remove('hidden');
+                loadingElement.classList.add('hidden');
+            } else {
+                // Show error if form type is not specified or invalid
+                errorElement.querySelector('span').textContent = 'Invalid or missing form type.';
+                errorElement.classList.remove('hidden');
+                loadingElement.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
