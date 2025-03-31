@@ -53,9 +53,13 @@
     };
     
     const updateRealtorInfo = (realtorData) => {
+        // Log the entire data object for debugging
+        console.log('Complete realtor data object:', realtorData);
+        
         // Update realtor headshot
         const headshot = document.getElementById('realtor-headshot');
         if (headshot) {
+            // Only use the source field for the headshot URL
             const headshotUrl = realtorData.source;
             console.log('Realtor headshot URL:', headshotUrl);
             
@@ -67,11 +71,11 @@
                 // Add error handling for image loading
                 headshot.onerror = function() {
                     console.error('Failed to load headshot image');
-                    // Keep the default SVG placeholder
+                    // Keep the placeholder image
                 };
             } else {
                 console.warn('Missing or invalid headshot URL');
-                // The default SVG placeholder will be used
+                // The placeholder image will remain
             }
         }
         

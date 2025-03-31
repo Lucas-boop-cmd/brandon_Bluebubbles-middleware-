@@ -55,9 +55,8 @@ router.get('/realtors', async (req, res) => {
       );
 
       const contactDetails = contactDetailsResponse.data.contact;
-      console.log('Contact source field:', contactDetails.source);
       
-      // Extract only the required fields - simplifying based on the sample response
+      // Extract only the required fields - using only the source field for the image
       const extractedDetails = {
         firstName: contactDetails.firstName || '',
         lastName: contactDetails.lastName || '',
@@ -66,6 +65,7 @@ router.get('/realtors', async (req, res) => {
         source: contactDetails.source || ''
       };
       
+      // Log the final extracted details to confirm what we're sending
       console.log('Extracted details being sent:', extractedDetails);
       res.json(extractedDetails);
     } else {
