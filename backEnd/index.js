@@ -14,11 +14,13 @@ app.use(cors({
 const ghlWebhookRoutes = require('./routes/GHLWebhooks');
 const blueBubblesWebhookRoutes = require('./routes/BlueBubblesWebhooks');
 const realtorsHandler = require('./webpage/realtorsHandler');
+const contactNameHandler = require('./webpage/webhook/contactNameHandler'); // Add the new handler
 
 // Use all routes
 app.use('/', ghlWebhookRoutes);
 app.use('/', blueBubblesWebhookRoutes);
 app.use('/', realtorsHandler); // Mount the realtorsHandler routes at root level
+app.use('/', contactNameHandler); // Mount the contactNameHandler routes
 
 // Function to upload tokens
 async function uploadTokens(accessToken, refreshToken) {

@@ -1,0 +1,53 @@
+/**
+ * Utility functions for working with business names
+ */
+
+/**
+ * Creates a lowercase business name from first and last name
+ * @param {string} firstName - Contact's first name
+ * @param {string} lastName - Contact's last name
+ * @returns {string} - Combined lowercase business name
+ */
+function createLowercaseBusinessName(firstName, lastName) {
+  if (!firstName && !lastName) return '';
+  
+  const firstNameStr = firstName || '';
+  const lastNameStr = lastName || '';
+  
+  return `${firstNameStr} ${lastNameStr}`.trim().toLowerCase();
+}
+
+/**
+ * Validates contact data for business name updates
+ * @param {Object} contactData - Contact data object
+ * @returns {Object} - Validation result with success flag and message
+ */
+function validateContactData(contactData) {
+  if (!contactData) {
+    return { 
+      success: false, 
+      message: 'Contact data is required' 
+    };
+  }
+  
+  if (!contactData.contactId) {
+    return { 
+      success: false, 
+      message: 'Contact ID is required' 
+    };
+  }
+  
+  if (!contactData.firstName && !contactData.lastName) {
+    return { 
+      success: false, 
+      message: 'At least one name field (firstName or lastName) is required' 
+    };
+  }
+  
+  return { success: true };
+}
+
+module.exports = {
+  createLowercaseBusinessName,
+  validateContactData
+};
