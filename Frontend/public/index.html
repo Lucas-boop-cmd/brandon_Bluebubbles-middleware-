@@ -7,16 +7,32 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full text-center">
+    <!-- Loading Indicator -->
+    <div id="loading" class="text-center hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p class="text-gray-600">Loading realtor information...</p>
+    </div>
+    
+    <!-- Error Message -->
+    <div id="error-message" class="text-red-500 text-center hidden"></div>
+    
+    <!-- Realtor Card -->
+    <div id="realtor-card" class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full text-center hidden">
         <!-- Above the Fold -->
         <div class="above-fold">
             <!-- Headshot -->
             <div class="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-blue-500">
-                <img src="https://via.placeholder.com/150" alt="Realtor Headshot" class="w-full h-full object-cover" />
+                <img id="realtor-headshot" src="https://via.placeholder.com/150" alt="Realtor Headshot" class="w-full h-full object-cover" />
             </div>
             <!-- Realtor Name -->
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">John Doe</h1>
+            <h1 id="realtor-name" class="text-2xl font-bold text-gray-800 mb-2">John Doe</h1>
+            
+            <!-- Contact Information -->
+            <div id="contact-info" class="mb-4">
+                <!-- Will be populated by JavaScript -->
+            </div>
         </div>
+        
         <!-- Below the Fold -->
         <div class="below-fold">
             <!-- QR Code -->
@@ -28,5 +44,8 @@
             <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg text-lg font-medium transition">Find Out Now</a>
         </div>
     </div>
+    
+    <!-- Include the app.js script -->
+    <script src="../app.js"></script>
 </body>
 </html>
