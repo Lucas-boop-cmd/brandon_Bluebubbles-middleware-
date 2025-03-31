@@ -55,9 +55,24 @@
     const updateRealtorInfo = (realtorData) => {
         // Update realtor headshot
         const headshot = document.getElementById('realtor-headshot');
-        if (headshot && realtorData.realtorHeadshot) {
-            headshot.src = realtorData.realtorHeadshot;
-            headshot.alt = `${realtorData.firstName} ${realtorData.lastName}`;
+        if (headshot) {
+            // Debug the headshot URL
+            console.log('Realtor headshot URL:', realtorData.realtorHeadshot);
+            
+            // Check if headshot URL exists and is valid
+            if (realtorData.realtorHeadshot && isValidUrl(realtorData.realtorHeadshot)) {
+                headshot.src = realtorData.realtorHeadshot;
+                headshot.alt = `${realtorData.firstName} ${realtorData.lastName}`;
+                
+                // Add error handling for image loading
+                headshot.onerror = function() {
+                    console.error('Failed to load headshot image');
+                    // Revert to placeholder on error
+                    headshot.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23999999'%3ENo Image%3C/text%3E%3C/svg%3E";
+                };
+            } else {
+                console.warn('Invalid or missing headshot URL');
+            }
         }
         
         // Update realtor name
@@ -92,6 +107,16 @@
         }
     };
     
+    // Helper function to validate URLs
+    const isValidUrl = (string) => {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    };
+
     const showError = (message) => {
         const errorElement = document.getElementById('error-message');
         if (errorElement) {
