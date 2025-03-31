@@ -95,6 +95,16 @@
             if (realtorData.phone) {
                 contactHtml += `<p class="text-gray-600 mb-2">Phone: <a href="tel:${realtorData.phone}" class="text-blue-600 hover:underline">${realtorData.phone}</a></p>`;
             }
+
+            // Add link to forms if the realtor has any
+            if (realtorData.forms && realtorData.forms.length > 0) {
+                contactHtml += '<div class="mt-4">';
+                realtorData.forms.forEach(form => {
+                    contactHtml += `<p class="mb-2"><a href="forms.html?form=${encodeURIComponent(form.id)}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">${form.title || 'Complete Form'}</a></p>`;
+                });
+                contactHtml += '</div>';
+            }
+            
             contactInfo.innerHTML = contactHtml;
         }
         
@@ -135,6 +145,32 @@
         }
     };
 
+    const showDefaultView = () => {
+        // Show the default view with Lucas's information
+        const defaultView = document.getElementById('default-view');
+        if (defaultView) {
+            defaultView.classList.remove('hidden');
+        }
+        
+        // Add event listener to the "Get My Card" button
+        const getCardButton = document.getElementById('get-card-button');
+        if (getCardButton) {
+            getCardButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = 'https://realtor.aihomequote.com';
+            });
+        }
+        
+        // Add error handling for the default headshot image
+        const defaultHeadshot = document.getElementById('default-headshot');
+        if (defaultHeadshot) {
+            defaultHeadshot.onerror = function() {
+                console.error('Failed to load default headshot image');
+                this.src = 'placeholder-image.jpg'; // Fallback to placeholder
+            };
+        }
+    };
+
     if (agent) {
         // Show loading state
         const loadingElement = document.getElementById('loading');
@@ -144,6 +180,7 @@
         
         callRealtorHandler(agent);
     } else {
-        showError('No agent specified in URL parameters');
+        // When no agent parameter is found, show the default view
+        showDefaultView();
     }
 })();

@@ -3,49 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realtor Digital Card</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>BlueBubbles Realtor</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
-    <!-- Loading Indicator -->
-    <div id="loading" class="text-center hidden">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p class="text-gray-600">Loading realtor information...</p>
-    </div>
-    
-    <!-- Error Message -->
-    <div id="error-message" class="text-red-500 text-center hidden"></div>
-    
-    <!-- Realtor Card -->
-    <div id="realtor-card" class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full text-center hidden">
-        <!-- Above the Fold -->
-        <div class="above-fold">
-            <!-- Headshot -->
-            <div class="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-blue-500">
-                <img id="realtor-headshot" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23999999'%3ENo Image%3C/text%3E%3C/svg%3E" alt="Realtor Headshot" class="w-full h-full object-cover" />
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-blue-600">BlueBubbles</h1>
+        </header>
+
+        <div id="loading" class="text-center py-8 hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600">Loading realtor information...</p>
+        </div>
+
+        <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4 hidden" role="alert">
+            <span class="block sm:inline"></span>
+        </div>
+
+        <div id="realtor-card" class="bg-white rounded-lg shadow-lg p-6 mt-4 hidden">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="mb-4 md:mb-0 md:mr-6">
+                    <img id="realtor-headshot" src="placeholder-image.jpg" alt="Realtor" class="w-32 h-32 rounded-full object-cover">
+                </div>
+                <div>
+                    <h2 id="realtor-name" class="text-2xl font-bold mb-2">Realtor Name</h2>
+                    <div id="contact-info">
+                        <!-- Contact information will be populated here -->
+                    </div>
+                </div>
             </div>
-            <!-- Realtor Name -->
-            <h1 id="realtor-name" class="text-2xl font-bold text-gray-800 mb-2">John Doe</h1>
+        </div>
+
+        <!-- Default view when no agent parameter is found -->
+        <div id="default-view" class="bg-white rounded-lg shadow-lg p-6 mt-4 hidden">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="mb-6 md:mb-0 md:mr-8">
+                    <img id="default-headshot" src="https://storage.googleapis.com/crm-contacts-docs-production/h4BWchNdy6Wykng1FfTH/tFWSfcTPxOqOjMMIZweR?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=default-crm-contacts%40highlevel-backend.iam.gserviceaccount.com%2F20250331%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20250331T201717Z&X-Goog-Expires=600&X-Goog-SignedHeaders=host&X-Goog-Signature=57a4d684869310fd53c0ffe3d7e45df22f9ea9096a169278c12daf976d5c028e7d026ff5d12f4914ccb047300a58d2707ed30d18f4b41fac6c767f591b1878bee3c45e23e575364141236f5496ee05b4dfd6446bf629995832a7d0e68a1a5232aa3380afa9f0ada77584cd6b8d266c85a7cb4e758ee0e023d69733fc601338d494f504f54b131d744b5e0995794c51e5ff289d04d3d6691b2fa79a089b7a96cde14e93368fceed737fc59b83950091eba647c7b404aa8fe559631ae3a58fcb890627792e2736d95e30bc7701615c1fd19438cc71b04d05232d3bacac25548b6025da1d8bfe00a16ec02f873e5391edc519987637707cc3cd14e9600c6d25f403" alt="Lucas Hernandez" class="w-48 h-48 rounded-full object-cover shadow-md">
+                </div>
+                <div class="text-center md:text-left">
+                    <h2 class="text-3xl font-bold mb-3">Lucas Hernandez</h2>
+                    <p class="text-gray-600 mb-4">Phone: <a href="tel:+19544956135" class="text-blue-600 hover:underline">+1 954-495-6135</a></p>
+                    
+                    <a href="#" id="get-card-button" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 mt-2">
+                        Get My Card
+                    </a>
+                </div>
+            </div>
             
-            <!-- Contact Information -->
-            <div id="contact-info" class="mb-4">
-                <!-- Will be populated by JavaScript -->
+            <div class="mt-10 flex flex-col items-center">
+                <div class="w-64 h-64 mb-4">
+                    <img src="https://storage.googleapis.com/msgsndr/h4BWchNdy6Wykng1FfTH/media/67eafb0495cc45a12e1f5ff1.png" alt="QR Code" class="w-full h-full">
+                </div>
+                <p class="text-center text-gray-700 max-w-md">
+                    Get your custom AI home quote card to preapprove your clients.
+                </p>
             </div>
-        </div>
-        
-        <!-- Below the Fold -->
-        <div class="below-fold">
-            <!-- QR Code -->
-            <div class="w-28 h-28 mx-auto mb-4">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-size='14' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23999999'%3EQR Code%3C/text%3E%3C/svg%3E" alt="QR Code" class="w-full h-full" />
-            </div>
-            <!-- Call to Action -->
-            <p class="text-gray-600 mb-4">Want to know how much home you can afford?</p>
-            <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg text-lg font-medium transition">Find Out Now</a>
         </div>
     </div>
-    
-    <!-- Include the app.js script -->
+
     <script src="app.js"></script>
 </body>
 </html>
