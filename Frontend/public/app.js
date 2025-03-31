@@ -53,30 +53,25 @@
     };
     
     const updateRealtorInfo = (realtorData) => {
-        // Log the entire data object for debugging
-        console.log('Complete realtor data object:', realtorData);
-        
         // Update realtor headshot
         const headshot = document.getElementById('realtor-headshot');
         if (headshot) {
-            // Try various fields that might contain the image URL
-            const headshotUrl = realtorData.source || realtorData.imageUrl || realtorData.avatarUrl || realtorData.profileImage;
-            console.log('Trying headshot URL:', headshotUrl);
+            const headshotUrl = realtorData.source;
+            console.log('Realtor headshot URL:', headshotUrl);
             
             // Check if headshot URL exists and is valid
             if (headshotUrl && isValidUrl(headshotUrl)) {
-                console.log('Setting valid headshot URL:', headshotUrl);
                 headshot.src = headshotUrl;
                 headshot.alt = `${realtorData.firstName} ${realtorData.lastName}`;
                 
                 // Add error handling for image loading
                 headshot.onerror = function() {
-                    console.error('Failed to load headshot image:', headshotUrl);
-                    // Revert to placeholder on error
-                    headshot.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23999999'%3ENo Image%3C/text%3E%3C/svg%3E";
+                    console.error('Failed to load headshot image');
+                    // Keep the default SVG placeholder
                 };
             } else {
-                console.warn('Invalid or missing headshot URL');
+                console.warn('Missing or invalid headshot URL');
+                // The default SVG placeholder will be used
             }
         }
         
