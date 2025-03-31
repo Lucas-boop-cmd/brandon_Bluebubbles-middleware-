@@ -1,14 +1,12 @@
-const REACT_APP_API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
 (() => {
     // Get API base URL from environment or set a default
     const getApiBaseUrl = () => {
-        // Check if we have a global variable (from webpack or similar)
-        if (typeof REACT_APP_API_BASE_URL !== 'undefined') {
-            return REACT_APP_API_BASE_URL;
+        // Check if we have a global variable (set by the hosting environment)
+        if (typeof window.REACT_APP_API_BASE_URL !== 'undefined') {
+            return window.REACT_APP_API_BASE_URL;
         }
         
-        // Try some bundlers do this)
+        // Try some bundlers do this
         if (window.env && window.env.REACT_APP_API_BASE_URL) {
             return window.env.REACT_APP_API_BASE_URL;
         }
