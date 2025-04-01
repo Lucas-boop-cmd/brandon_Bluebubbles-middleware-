@@ -5,7 +5,7 @@ const { client } = require('../../dataBase');
 const { createLowercaseBusinessName, validateContactData } = require('../createBusinessname');
 require('dotenv').config();
 
-const locationId = process.env.LOCATION_ID;
+const businessNameUpdateUrl = process.env.BUSINESS_NAME_UPDATE_URL;
 
 /**
  * Webhook endpoint to process contact names
@@ -25,7 +25,6 @@ router.post('/update-business-name', async (req, res) => {
     console.log(`Contact ID: ${contactData.contactId}`);
     console.log(`First Name: ${contactData.firstName}`);
     console.log(`Last Name: ${contactData.lastName}`);
-    console.log(`Request Body: ${JSON.stringify(req.body)}`);
     console.log(`=================================================\n`);
     
     // Validate contact data using the utility function
@@ -41,42 +40,47 @@ router.post('/update-business-name', async (req, res) => {
     const combinedName = createLowercaseBusinessName(contactData.firstName, contactData.lastName);
     console.log(`Combined lowercase name: ${combinedName}`);
     
-    // Get the access token from Redis
-    const redisKey = `tokens:${locationId}`;
-    const accessToken = await client.hGet(redisKey, 'accessToken');
-    
-    if (!accessToken) {
-      console.error('Access token not found in Redis!');
-      return res.status(401).json({
+    // Check if the BUSINESS_NAME_UPDATE_URL is set
+    if (!businessNameUpdateUrl) {
+      console.error('BUSINESS_NAME_UPDATE_URL is not configured in the environment variables');
+      return res.status(500).json({
         success: false,
-        message: 'Access token not found'
+        message: 'Business name update URL is not configured'
       });
     }
     
-    // Update the businessName in Go High Level
-    const updateResponse = await axios.put(
-      `https://services.leadconnectorhq.com/contacts/${contactData.contactId}`,
-      {
-        businessName: combinedName
-      },
+    // Prepare the GHL-ready payload with both contactId and businessName
+    // GHL Workflows expect specific field names, ensuring we send exactly what's needed
+    const webhookPayload = {
+      contactId: contactData.contactId,
+      businessName: combinedName
+    };
+    
+    console.log(`\n========== SENDING TO GHL WORKFLOW ==========`);
+    console.log(`URL: ${businessNameUpdateUrl}`);
+    console.log(`Payload: ${JSON.stringify(webhookPayload, null, 2)}`);
+    console.log(`=========================================\n`);
+    
+    // Send the data to the GHL Workflow webhook URL
+    const webhookResponse = await axios.post(
+      businessNameUpdateUrl,
+      webhookPayload,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Version: '2021-07-28',
           'Content-Type': 'application/json'
         }
       }
     );
     
-    console.log(`\n========== BUSINESS NAME UPDATE RESPONSE ==========`);
-    console.log(`Status: ${updateResponse.status}`);
-    console.log(`Response: ${JSON.stringify(updateResponse.data, null, 2)}`);
-    console.log(`====================================================\n`);
+    console.log(`\n========== GHL WORKFLOW RESPONSE ==========`);
+    console.log(`Status: ${webhookResponse.status}`);
+    console.log(`Response: ${JSON.stringify(webhookResponse.data, null, 2)}`);
+    console.log(`=========================================\n`);
     
     // Return success response
     return res.status(200).json({
       success: true,
-      message: 'Business name updated successfully',
+      message: 'Business name update triggered in GHL workflow',
       data: {
         contactId: contactData.contactId,
         businessName: combinedName

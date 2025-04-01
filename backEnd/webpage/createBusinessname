@@ -3,10 +3,10 @@
  */
 
 /**
- * Creates a lowercase business name from first and last name
+ * Creates a lowercase business name from first and last name with no space between
  * @param {string} firstName - Contact's first name
  * @param {string} lastName - Contact's last name
- * @returns {string} - Combined lowercase business name
+ * @returns {string} - Combined lowercase business name without spaces
  */
 function createLowercaseBusinessName(firstName, lastName) {
   if (!firstName && !lastName) return '';
@@ -14,7 +14,8 @@ function createLowercaseBusinessName(firstName, lastName) {
   const firstNameStr = firstName || '';
   const lastNameStr = lastName || '';
   
-  return `${firstNameStr} ${lastNameStr}`.trim().toLowerCase();
+  // Combine without space and convert to lowercase
+  return `${firstNameStr}${lastNameStr}`.toLowerCase();
 }
 
 /**
