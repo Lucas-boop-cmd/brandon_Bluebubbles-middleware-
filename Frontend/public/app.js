@@ -10,30 +10,50 @@ document.addEventListener('DOMContentLoaded', function() {
     if (agentParam) {
         document.getElementById('loading').classList.remove('hidden');
         
-        // Fetch agent information (replace with your actual API endpoint)
-        fetch(`/api/agent/${agentParam}`)
-            .then(response => {
+        // Function to fetch agent data
+        const fetchAgentData = async (agentName) => {
+            try {
+                // First, try to get the agent data from the server
+                const response = await fetch(`/api/realtors?name=${encodeURIComponent(agentName)}`);
+                
                 if (!response.ok) {
-                    throw new Error('Agent not found');
+                    throw new Error('Failed to fetch realtor data');
                 }
-                return response.json();
-            })
-            .then(data => {
+                
+                const data = await response.json();
+                
+                // Check if we got valid agent data
+                if (data && data.length > 0) {
+                    return data[0]; // Return the first matching agent
+                } else {
+                    throw new Error('No realtor found with that name');
+                }
+            } catch (error) {
+                console.error('Error fetching agent data:', error);
+                throw error;
+            }
+        };
+        
+        // Execute the fetch
+        fetchAgentData(agentParam)
+            .then(agentData => {
                 // Display agent information
-                document.getElementById('realtor-headshot').src = data.headshot || 'placeholder-image.jpg';
-                document.getElementById('realtor-name').textContent = data.name || 'Realtor Name';
+                document.getElementById('realtor-headshot').src = agentData.headshot || 'placeholder-image.jpg';
+                document.getElementById('realtor-name').textContent = agentData.name || 'Realtor Name';
                 
                 // Populate contact info
                 const contactInfoDiv = document.getElementById('contact-info');
-                if (data.phone) {
+                contactInfoDiv.innerHTML = ''; // Clear existing content
+                
+                if (agentData.phone) {
                     const phoneElement = document.createElement('p');
-                    phoneElement.innerHTML = `Phone: <a href="tel:${data.phone}" class="text-blue-600 hover:underline">${data.phone}</a>`;
+                    phoneElement.innerHTML = `Phone: <a href="tel:${agentData.phone}" class="text-blue-600 hover:underline">${agentData.phone}</a>`;
                     contactInfoDiv.appendChild(phoneElement);
                 }
                 
-                if (data.email) {
+                if (agentData.email) {
                     const emailElement = document.createElement('p');
-                    emailElement.innerHTML = `Email: <a href="mailto:${data.email}" class="text-blue-600 hover:underline">${data.email}</a>`;
+                    emailElement.innerHTML = `Email: <a href="mailto:${agentData.email}" class="text-blue-600 hover:underline">${agentData.email}</a>`;
                     contactInfoDiv.appendChild(emailElement);
                 }
                 
