@@ -31,11 +31,11 @@ function validateContactData(contactData) {
     };
   }
   
-  // Changed validation to require at least one name field instead of contactId
-  if (!contactData.firstName && !contactData.lastName) {
+  // Check if we have at least a phone number or name fields to identify the contact
+  if (!contactData.phone && !contactData.firstName && !contactData.lastName) {
     return { 
       success: false, 
-      message: 'At least one name field (firstName or lastName) is required' 
+      message: 'At least one identifying field (phone, firstName, or lastName) is required' 
     };
   }
   

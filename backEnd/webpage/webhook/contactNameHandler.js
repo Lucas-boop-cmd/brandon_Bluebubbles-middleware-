@@ -16,7 +16,8 @@ router.post('/update-business-name', async (req, res) => {
     const contactData = { 
       firstName: req.body.firstName, 
       lastName: req.body.lastName, 
-      contactId: req.body.contactId 
+      contactId: req.body.contactId,
+      phone: req.body.phone  // Add phone field
     };
     
     // Log the incoming request
@@ -25,6 +26,7 @@ router.post('/update-business-name', async (req, res) => {
     console.log(`Contact ID: ${contactData.contactId}`);
     console.log(`First Name: ${contactData.firstName}`);
     console.log(`Last Name: ${contactData.lastName}`);
+    console.log(`Phone: ${contactData.phone}`);
     console.log(`=================================================\n`);
     
     // Validate contact data using the utility function
@@ -49,10 +51,11 @@ router.post('/update-business-name', async (req, res) => {
       });
     }
     
-    // Prepare the GHL-ready payload with firstName, lastName, and businessName
+    // Prepare the GHL-ready payload with firstName, lastName, phone, and businessName
     const webhookPayload = {
       firstName: contactData.firstName,
       lastName: contactData.lastName,
+      phone: contactData.phone,
       businessName: combinedName
     };
     
@@ -84,6 +87,7 @@ router.post('/update-business-name', async (req, res) => {
       data: {
         firstName: contactData.firstName,
         lastName: contactData.lastName,
+        phone: contactData.phone,
         businessName: combinedName
       }
     });
