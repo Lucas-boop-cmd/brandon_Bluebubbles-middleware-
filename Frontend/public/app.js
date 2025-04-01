@@ -5,13 +5,21 @@
         const url = new URL(window.location.href);
         const pathSegments = url.pathname.split("/").filter(Boolean);
         
-        // If we have exactly one path segment, consider it as the 'lo' parameter
-        if (pathSegments.length === 1) {
+        // If we have at least one path segment, use the first one as the 'lo' parameter
+        if (pathSegments.length >= 1) {
             const lo = pathSegments[0];
-            // Only redirect if we're not already on a URL with query parameters
-            if (!window.location.search) {
+            
+            // Check if we already have an 'lo' parameter
+            const params = new URLSearchParams(window.location.search);
+            const hasLoParam = params.has('lo');
+            
+            // Only redirect if we're not already on the home path with the lo parameter
+            if (!hasLoParam && url.pathname !== '/') {
+                // Preserve other query parameters if they exist
+                params.set('lo', lo);
+                
                 // Create new URL with the path converted to 'lo' parameter
-                const newUrl = `${window.location.origin}/?lo=${encodeURIComponent(lo)}`;
+                const newUrl = `${window.location.origin}/?${params.toString()}`;
                 window.location.href = newUrl;
                 return true; // Indicates a redirect is happening
             }
