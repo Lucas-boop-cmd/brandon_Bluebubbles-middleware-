@@ -173,6 +173,32 @@
         }
     };
 
+    const setupPrimaryButtons = () => {
+        // Find all elements with class "primary-button"
+        const primaryButtons = document.querySelectorAll('.primary-button');
+        
+        // Add click event listener to each button
+        primaryButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Get all current URL parameters
+                const currentParams = new URLSearchParams(window.location.search);
+                
+                // Create URL string for forms.html with all current parameters
+                let formsUrl = 'forms.html';
+                const paramString = currentParams.toString();
+                
+                if (paramString) {
+                    formsUrl += '?' + paramString;
+                }
+                
+                // Navigate to forms.html with the parameters
+                window.location.href = formsUrl;
+            });
+        });
+    };
+
     if (agent) {
         // Show loading state
         const loadingElement = document.getElementById('loading');
@@ -185,4 +211,7 @@
         // When no agent parameter is found, show the default view
         showDefaultView();
     }
+    
+    // Initialize the primary buttons when the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', setupPrimaryButtons);
 })();
