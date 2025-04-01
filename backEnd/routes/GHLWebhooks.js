@@ -19,7 +19,7 @@ router.post('/ghl/webhook', async (req, res) => { // Use router.post instead of 
         // Filter to only process events of type SMS or InboundMessage
         if (type === 'InboundMessage') {
             console.log("🔄 Forwarding InboundMessage event to convoAi.js for processing...");
-            const convoAi = require('./convoAi');
+            const convoAi = require('../convoAi');
             await convoAi.processInboundMessage(req.body);
             return res.status(200).json({ status: 'success', message: 'InboundMessage forwarded to convoAi.js' });
         }

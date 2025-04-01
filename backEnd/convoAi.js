@@ -50,7 +50,7 @@ module.exports.processInboundMessage = async (eventData) => {
 
         if (filteredOpportunities.length === 0) {
             console.log("❌ No opportunities found with the specified pipelineId.");
-            return;
+            return { status: 'ignored', message: 'No matching opportunities found' };
         }
 
         console.log("✅ Found matching opportunity:", filteredOpportunities[0]);
@@ -107,6 +107,8 @@ module.exports.processInboundMessage = async (eventData) => {
             {} // Empty data
         );
         console.log("✅ Typing indicator sent to BlueBubbles!", typingResponse.data);
+
+        return { status: 'success', message: 'InboundMessage processed successfully' };
 
     } catch (error) {
         console.error("❌ Error processing InboundMessage event:", error);
