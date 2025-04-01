@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script>
+    // Immediately execute redirect logic
+    (function() {
+      try {
+        // Get path segments
+        var path = window.location.pathname;
+        var segments = path.split('/').filter(function(segment) {
+          return segment.length > 0;
+        });
+        
+        if (segments.length >= 1) {
+          var lo = segments[0];
+          console.log('404 redirect: Path segment detected:', lo);
+          
+          // Create query parameters
+          var params = new URLSearchParams(window.location.search);
+          if (!params.has('lo')) {
+            params.set('lo', lo);
+          }
+          
+          // Construct new URL and redirect
+          var newUrl = window.location.origin + '/?' + params.toString();
+          console.log('404 redirect: Redirecting to', newUrl);
+          window.location.replace(newUrl);
+        } else {
+          // No segments, just go to home page
+          window.location.replace(window.location.origin);
+        }
+      } catch (e) {
+        console.error('404 redirect failed:', e);
+        // Last resort - go to home page
+        window.location.replace(window.location.origin);
+      }
+    })();
+  </script>
+  <meta http-equiv="refresh" content="1;url=/">
+</head>
+<body>
+  <div style="text-align: center; font-family: Arial, sans-serif; margin-top: 50px;">
+    <h2>Redirecting you to the correct page...</h2>
+    <p>If you are not redirected automatically, <a href="/">click here</a>.</p>
+  </div>
+</body>
+</html>
