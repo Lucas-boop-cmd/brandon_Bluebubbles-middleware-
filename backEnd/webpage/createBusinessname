@@ -31,13 +31,7 @@ function validateContactData(contactData) {
     };
   }
   
-  if (!contactData.contactId) {
-    return { 
-      success: false, 
-      message: 'Contact ID is required' 
-    };
-  }
-  
+  // Changed validation to require at least one name field instead of contactId
   if (!contactData.firstName && !contactData.lastName) {
     return { 
       success: false, 

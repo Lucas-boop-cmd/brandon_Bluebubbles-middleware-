@@ -49,10 +49,10 @@ router.post('/update-business-name', async (req, res) => {
       });
     }
     
-    // Prepare the GHL-ready payload with both contactId and businessName
-    // GHL Workflows expect specific field names, ensuring we send exactly what's needed
+    // Prepare the GHL-ready payload with firstName, lastName, and businessName
     const webhookPayload = {
-      contactId: contactData.contactId,
+      firstName: contactData.firstName,
+      lastName: contactData.lastName,
       businessName: combinedName
     };
     
@@ -82,7 +82,8 @@ router.post('/update-business-name', async (req, res) => {
       success: true,
       message: 'Business name update triggered in GHL workflow',
       data: {
-        contactId: contactData.contactId,
+        firstName: contactData.firstName,
+        lastName: contactData.lastName,
         businessName: combinedName
       }
     });
