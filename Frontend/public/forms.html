@@ -24,12 +24,6 @@
         <div id="customer-form" class="hidden">
             <iframe src="https://api.leadconnectorhq.com/widget/survey/ZdxUZnijqVITonoQQHBQ" style="border:none;width:100%;" scrolling="no" id="ZdxUZnijqVITonoQQHBQ" title="New Lucas Payment calculator"></iframe>
         </div>
-        
-        <div id="find-out-now" class="mt-6 text-center">
-            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Find Out Now
-            </button>
-        </div>
     </div>
     
     <script src="https://link.msgsndr.com/js/form_embed.js"></script>
@@ -68,19 +62,6 @@
             if (agent) {
                 sessionStorage.setItem('currentAgent', agent);
             }
-            
-            // Set up the "Find Out Now" button
-            document.querySelector('#find-out-now button').addEventListener('click', function() {
-                // Add your desired action for the button here
-                // For example, this could scroll to a specific section or trigger a form submission
-                if (formType === 'realtor') {
-                    // Scroll to the realtor form
-                    document.getElementById('realtor-form').scrollIntoView({ behavior: 'smooth' });
-                } else if (formType === 'customer') {
-                    // Scroll to the customer form
-                    document.getElementById('customer-form').scrollIntoView({ behavior: 'smooth' });
-                }
-            });
         });
     </script>
 </body>
