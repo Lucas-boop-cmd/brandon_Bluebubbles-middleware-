@@ -1,35 +1,47 @@
 (() => {
     // Check for path-based navigation and convert to query parameters
     const handlePathBasedNavigation = () => {
-        // Get the current URL and parse it
-        const url = new URL(window.location.href);
-        const pathSegments = url.pathname.split("/").filter(Boolean);
-        
-        // If we have at least one path segment, use the first one as the 'lo' parameter
-        if (pathSegments.length >= 1) {
-            const lo = pathSegments[0];
+        try {
+            // Get the current URL and parse it
+            const url = new URL(window.location.href);
+            const pathSegments = url.pathname.split("/").filter(Boolean);
             
-            // Check if we already have an 'lo' parameter
-            const params = new URLSearchParams(window.location.search);
-            const hasLoParam = params.has('lo');
-            
-            // Only redirect if we're not already on the home path with the lo parameter
-            if (!hasLoParam && url.pathname !== '/') {
-                // Preserve other query parameters if they exist
-                params.set('lo', lo);
+            // Check if we have at least one path segment and we're not already on the home page
+            if (pathSegments.length >= 1 && url.pathname !== '/') {
+                const lo = pathSegments[0];
+                console.log('Found path segment:', lo);
                 
-                // Create new URL with the path converted to 'lo' parameter
-                const newUrl = `${window.location.origin}/?${params.toString()}`;
-                window.location.href = newUrl;
-                return true; // Indicates a redirect is happening
+                // Check if we already have an 'lo' parameter
+                const params = new URLSearchParams(window.location.search);
+                const hasLoParam = params.has('lo');
+                
+                if (!hasLoParam) {
+                    // Preserve any existing query parameters
+                    params.set('lo', lo);
+                    
+                    // Create new URL with the path converted to 'lo' parameter
+                    const newUrl = `${url.origin}/?${params.toString()}`;
+                    console.log('Redirecting to:', newUrl);
+                    
+                    // Use replace instead of assign to avoid adding to browser history
+                    window.location.replace(newUrl);
+                    return true; // Indicates a redirect is happening
+                }
             }
+            return false; // No redirect needed
+        } catch (error) {
+            console.error('Error in handlePathBasedNavigation:', error);
+            return false;
         }
-        return false; // No redirect needed
     };
 
-    // Execute path check immediately, and only continue if no redirect happened
-    if (handlePathBasedNavigation()) {
-        return; // Exit early if redirect is happening
+    // Make sure this executes immediately when the script loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (handlePathBasedNavigation()) return;
+        });
+    } else {
+        if (handlePathBasedNavigation()) return;
     }
 
     // Get API base URL from environment or set a default
