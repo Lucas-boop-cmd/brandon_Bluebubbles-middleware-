@@ -1,4 +1,29 @@
 (() => {
+    // Check for path-based navigation and convert to query parameters
+    const handlePathBasedNavigation = () => {
+        // Get the current URL and parse it
+        const url = new URL(window.location.href);
+        const pathSegments = url.pathname.split("/").filter(Boolean);
+        
+        // If we have exactly one path segment, consider it as the 'lo' parameter
+        if (pathSegments.length === 1) {
+            const lo = pathSegments[0];
+            // Only redirect if we're not already on a URL with query parameters
+            if (!window.location.search) {
+                // Create new URL with the path converted to 'lo' parameter
+                const newUrl = `${window.location.origin}/?lo=${encodeURIComponent(lo)}`;
+                window.location.href = newUrl;
+                return true; // Indicates a redirect is happening
+            }
+        }
+        return false; // No redirect needed
+    };
+
+    // Execute path check immediately, and only continue if no redirect happened
+    if (handlePathBasedNavigation()) {
+        return; // Exit early if redirect is happening
+    }
+
     // Get API base URL from environment or set a default
     const getApiBaseUrl = () => {
         // Check if we have a global variable (set by the hosting environment)
@@ -17,7 +42,7 @@
 
     const getAgentParameter = () => {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('agent');
+                return urlParams.get('agent');
     };
 
     const agent = getAgentParameter();
