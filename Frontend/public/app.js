@@ -192,3 +192,4 @@
         // When no agent parameter is found, show the default view
         showDefaultView();
     }
+})();
