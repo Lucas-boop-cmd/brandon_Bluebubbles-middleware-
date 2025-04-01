@@ -38,13 +38,18 @@
             const urlParams = new URLSearchParams(window.location.search);
             const formType = urlParams.get('form');
             const agent = urlParams.get('agent');
+            const lo = urlParams.get('lo');
             
             const loadingElement = document.getElementById('loading');
             const errorElement = document.getElementById('error-message');
             const realtorForm = document.getElementById('realtor-form');
             const customerForm = document.getElementById('customer-form');
             
-            if (formType === 'realtor') {
+            if (lo && lo.toLowerCase() === 'lucas') {
+                // Show customer form when lo=lucas is in the URL
+                customerForm.classList.remove('hidden');
+                loadingElement.classList.add('hidden');
+            } else if (formType === 'realtor') {
                 // Show realtor form
                 realtorForm.classList.remove('hidden');
                 loadingElement.classList.add('hidden');
