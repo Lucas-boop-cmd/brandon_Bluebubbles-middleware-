@@ -1,48 +1,56 @@
+// Early execution path redirection
+(function() {
+    try {
+        const url = new URL(window.location.href);
+        const pathSegments = url.pathname.split("/").filter(Boolean);
+        
+        if (pathSegments.length >= 1 && url.pathname !== '/') {
+            const lo = pathSegments[0];
+            console.log('Early redirect: Path segment detected:', lo);
+            
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('lo')) {
+                params.set('lo', lo);
+                const newUrl = `${url.origin}/?${params.toString()}`;
+                console.log('Early redirect: Redirecting to', newUrl);
+                window.location.replace(newUrl);
+            }
+        }
+    } catch (e) {
+        console.error('Early redirect failed:', e);
+    }
+})();
+
+// Main application code
 (() => {
-    // Check for path-based navigation and convert to query parameters
+    // Backup path-based navigation handler
     const handlePathBasedNavigation = () => {
         try {
-            // Get the current URL and parse it
             const url = new URL(window.location.href);
             const pathSegments = url.pathname.split("/").filter(Boolean);
             
-            // Check if we have at least one path segment and we're not already on the home page
             if (pathSegments.length >= 1 && url.pathname !== '/') {
                 const lo = pathSegments[0];
-                console.log('Found path segment:', lo);
+                console.log('Backup handler: Path segment detected:', lo);
                 
-                // Check if we already have an 'lo' parameter
                 const params = new URLSearchParams(window.location.search);
-                const hasLoParam = params.has('lo');
-                
-                if (!hasLoParam) {
-                    // Preserve any existing query parameters
+                if (!params.has('lo')) {
                     params.set('lo', lo);
-                    
-                    // Create new URL with the path converted to 'lo' parameter
                     const newUrl = `${url.origin}/?${params.toString()}`;
-                    console.log('Redirecting to:', newUrl);
-                    
-                    // Use replace instead of assign to avoid adding to browser history
+                    console.log('Backup handler: Redirecting to', newUrl);
                     window.location.replace(newUrl);
-                    return true; // Indicates a redirect is happening
+                    return true;
                 }
             }
-            return false; // No redirect needed
+            return false;
         } catch (error) {
-            console.error('Error in handlePathBasedNavigation:', error);
+            console.error('Backup path navigation error:', error);
             return false;
         }
     };
 
-    // Make sure this executes immediately when the script loads
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            if (handlePathBasedNavigation()) return;
-        });
-    } else {
-        if (handlePathBasedNavigation()) return;
-    }
+    // Double-check with the backup handler
+    if (handlePathBasedNavigation()) return;
 
     // Get API base URL from environment or set a default
     const getApiBaseUrl = () => {
