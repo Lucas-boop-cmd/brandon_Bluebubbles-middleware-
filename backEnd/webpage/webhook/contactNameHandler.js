@@ -20,6 +20,13 @@ router.post('/update-business-name', async (req, res) => {
       phone: req.body.phone  // Add phone field
     };
     
+    // Send immediate 200 OK response to acknowledge data receipt
+    res.status(200).json({
+      success: true,
+      message: 'Request received, processing business name update',
+      receivedData: contactData
+    });
+    
     // Log the incoming request
     console.log(`\n========== BUSINESS NAME UPDATE REQUEST ==========`);
     console.log(`Time: ${new Date().toISOString()}`);
@@ -32,10 +39,8 @@ router.post('/update-business-name', async (req, res) => {
     // Validate contact data using the utility function
     const validation = validateContactData(contactData);
     if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        message: validation.message
-      });
+      console.error(`Validation failed: ${validation.message}`);
+      return; // Early return, response already sent
     }
     
     // Use the utility function to create the lowercase business name
@@ -45,10 +50,7 @@ router.post('/update-business-name', async (req, res) => {
     // Check if the BUSINESS_NAME_UPDATE_URL is set
     if (!businessNameUpdateUrl) {
       console.error('BUSINESS_NAME_UPDATE_URL is not configured in the environment variables');
-      return res.status(500).json({
-        success: false,
-        message: 'Business name update URL is not configured'
-      });
+      return; // Early return, response already sent
     }
     
     // Prepare the GHL-ready payload with firstName, lastName, phone, and businessName
@@ -80,17 +82,7 @@ router.post('/update-business-name', async (req, res) => {
     console.log(`Response: ${JSON.stringify(webhookResponse.data, null, 2)}`);
     console.log(`=========================================\n`);
     
-    // Return success response
-    return res.status(200).json({
-      success: true,
-      message: 'Business name update triggered in GHL workflow',
-      data: {
-        firstName: contactData.firstName,
-        lastName: contactData.lastName,
-        phone: contactData.phone,
-        businessName: combinedName
-      }
-    });
+    // Note: Remove the final res.status(200).json(...) since we've already sent the response
     
   } catch (error) {
     console.error(`\n======== ERROR UPDATING BUSINESS NAME ========`);
@@ -101,11 +93,8 @@ router.post('/update-business-name', async (req, res) => {
     }
     console.error(`===========================================\n`);
     
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to update business name',
-      error: error.message
-    });
+    // Don't try to send another response if an error occurs after we've already sent one
+    // Just log the error
   }
 });
 
