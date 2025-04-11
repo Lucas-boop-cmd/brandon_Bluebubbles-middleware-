@@ -29,16 +29,15 @@ router.post('/ghl/webhook', async (req, res) => { // Use router.post instead of 
             return res.status(200).json({ status: 'ignored', message: 'Event is not of type SMS' });
         }
 
-        if (!phone || !message || !userId || !messageId) {
+        if (!phone || !message || !messageId) {
             console.error("❌ Missing required fields in Go High-Level event:", req.body);
             if (!phone) console.error("❌ Missing field: phone");
             if (!message) console.error("❌ Missing field: message");
-            if (!userId) console.error("❌ Missing field: userId");
             if (!messageId) console.error("❌ Missing field: messageId");
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        console.log(`🔍 New message from ${userId}: ${message}`);
+        console.log(`🔍 New message: ${message}`);
 
         // Retrieve the access token from Redis
         const redisKey = `tokens:${LocationId}`;
