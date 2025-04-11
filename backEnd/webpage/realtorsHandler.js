@@ -79,8 +79,33 @@ router.get('/realtors', async (req, res) => {
         lastName: contactDetails.lastName || '',
         email: contactDetails.email || '',
         phone: contactDetails.phone || '',
-        source: contactDetails.source || ''
+        source: contactDetails.source || '',
+        id: contactDetails.id || '',
+        instagram: '',
+        facebook: '',
+        linkedin: ''
       };
+      
+      // Extract custom fields if they exist
+      if (contactDetails.customFields && Array.isArray(contactDetails.customFields)) {
+        // Find instagram field
+        const instagramField = contactDetails.customFields.find(field => field.id === 'v6yO7jM96Pd5mCai7x70');
+        if (instagramField && instagramField.value) {
+          extractedDetails.instagram = instagramField.value;
+        }
+        
+        // Find facebook field
+        const facebookField = contactDetails.customFields.find(field => field.id === 'zhEVZR493qJgoSC4fjLv');
+        if (facebookField && facebookField.value) {
+          extractedDetails.facebook = facebookField.value;
+        }
+        
+        // Find linkedin field
+        const linkedinField = contactDetails.customFields.find(field => field.id === 'zNhP0A55zZlJ7TbJ2In5');
+        if (linkedinField && linkedinField.value) {
+          extractedDetails.linkedin = linkedinField.value;
+        }
+      }
       
       // Log the extracted details
       console.log(`\n======== EXTRACTED DETAILS ========`);
@@ -88,6 +113,10 @@ router.get('/realtors', async (req, res) => {
       console.log(`Email: ${extractedDetails.email}`);
       console.log(`Phone: ${extractedDetails.phone}`);
       console.log(`Image URL: ${extractedDetails.source}`);
+      console.log(`ID: ${extractedDetails.id}`);
+      console.log(`Instagram: ${extractedDetails.instagram}`);
+      console.log(`Facebook: ${extractedDetails.facebook}`);
+      console.log(`LinkedIn: ${extractedDetails.linkedin}`);
       console.log(`===================================\n`);
       
       res.json(extractedDetails);
@@ -98,7 +127,11 @@ router.get('/realtors', async (req, res) => {
         lastName: '',
         email: '',
         phone: '',
-        source: ''
+        source: '',
+        id: '',
+        instagram: '',
+        facebook: '',
+        linkedin: ''
       });
     }
   } catch (error) {
