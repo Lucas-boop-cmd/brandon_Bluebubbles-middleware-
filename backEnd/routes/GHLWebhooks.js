@@ -48,22 +48,30 @@ router.post('/ghl/webhook', async (req, res) => { // Use router.post instead of 
             return res.status(500).json({ error: 'Access token not found in Redis' });
         }
 
-        // ✅ Query for the handle to get the service
-        console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
-        const handleResponse = await axios.get(
-            `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
-        );
-
-        console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
-
-        const service = handleResponse.data.data.service;
-
-        if (!service) {
-            console.log(`❌ No service found for phone number: ${phone}`);
-            return res.status(404).json({ error: "No service found for handle" });
+        // Default service to SMS
+        let service = "SMS";
+        
+        try {
+            // ✅ Query for the handle to get the service
+            console.log(`🔍 Querying BlueBubbles for handle with phone: ${phone}`);
+            const handleResponse = await axios.get(
+                `${BLUEBUBBLES_API_URL}/api/v1/handle/${encodeURIComponent(phone)}?password=${BLUEBUBBLES_PASSWORD}`
+            );
+            
+            console.log(`🔍 BlueBubbles handle response:`, handleResponse.data);
+            
+            // Update service if found in response
+            if (handleResponse.data.data && handleResponse.data.data.service) {
+                service = handleResponse.data.data.service;
+                console.log(`✅ Found service: ${service} for phone: ${phone}`);
+            } else {
+                console.log(`⚠️ No service found for phone number: ${phone}, defaulting to SMS`);
+            }
+        } catch (error) {
+            console.log(`⚠️ Error querying BlueBubbles for handle: ${error.message}, defaulting to SMS`);
         }
 
-        // Manually construct the chat GUID
+        // Manually construct the chat GUID using either found service or default SMS
         const chatGuid = `${service};-;${phone}`;
         console.log(`✅ Constructed Chat GUID: ${chatGuid} for ${phone}`);
 
